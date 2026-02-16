@@ -7,7 +7,7 @@
 #include "../utils/math.h"
 namespace engine::render
 {
-    class Sprite
+    class Image
     {
     private:
         /// @brief 纹理文件路径
@@ -20,11 +20,11 @@ namespace engine::render
         bool is_flipped_ = false;
 
     public:
-        Sprite() = default;
+        Image() = default;
 
-        Sprite(const std::string &texture_path, std::optional<engine::utils::Rect> source_rect = std::nullopt, bool is_flipped = false);
+        Image(const std::string &texture_path, std::optional<engine::utils::Rect> source_rect = std::nullopt, bool is_flipped = false);
 
-        Sprite(entt::id_type texture_id, std::optional<engine::utils::Rect> source_rect = std::nullopt, bool is_flipped = false);
+        Image(entt::id_type texture_id, std::optional<engine::utils::Rect> source_rect = std::nullopt, bool is_flipped = false);
 
         const std::string &getTexturePath() const { return texture_path_; }
         entt::id_type getTextureId() const { return texture_id_; }

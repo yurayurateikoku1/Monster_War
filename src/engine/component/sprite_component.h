@@ -1,5 +1,5 @@
 #pragma once
-#include "../render/sprite.h"
+#include "../render/image.h"
 #include "component.h"
 #include "../utils/alignment.h"
 #include <optional>
@@ -28,7 +28,7 @@ namespace engine::component
         TransformComponent *transform_{nullptr};
 
         /// @brief 纹理对象
-        engine::render::Sprite sprite_;
+        engine::render::Image sprite_;
         /// @brief 对齐方式
         engine::utils::Alignment alignment_ = engine::utils::Alignment::NONE;
         glm::vec2 sprite_size_{0.0f, 0.0f};
@@ -43,7 +43,7 @@ namespace engine::component
                         std::optional<SDL_Rect> source_rect = std::nullopt,
                         bool is_flipped = false);
 
-        SpriteComponent(engine::render::Sprite &&sprite,
+        SpriteComponent(engine::render::Image &&sprite,
                         engine::resource::ResourceManager &resource_manager,
                         engine::utils::Alignment alignment = engine::utils::Alignment::NONE);
         ~SpriteComponent() override = default;
@@ -55,7 +55,7 @@ namespace engine::component
         /// @brief 更新偏移量(根据alignment和sprite_size计算offset)
         void updateOffset();
 
-        const engine::render::Sprite &getSprite() const { return sprite_; }
+        const engine::render::Image &getSprite() const { return sprite_; }
         entt::id_type getTextureId() const { return sprite_.getTextureId(); }
         bool isFlipped() const { return sprite_.isFlipped(); }
         bool isHidden() const { return is_hidden_; }

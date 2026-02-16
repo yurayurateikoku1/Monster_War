@@ -1,5 +1,5 @@
 #pragma once
-#include "sprite.h"
+#include "image.h"
 #include <optional>
 #include <glm/glm.hpp>
 #include "../utils/math.h"
@@ -37,23 +37,13 @@ namespace engine::render
         /// @param position
         /// @param scale
         /// @param angle
-        void drawSprite(const Camera &camera, const engine::render::Sprite &sprite, const glm::vec2 &position, const glm::vec2 &scale = {1.0f, 1.0f}, double angle = 0.0f);
-
-        /// @brief 绘制视差滚动背景
-        /// @param camera
-        /// @param sprite
-        /// @param position
-        /// @param scroll_factor 滚动因子
-        /// @param repeat 是否重复
-        /// @param scale 缩放因子
-        void drawParallx(const Camera &camera, const engine::render::Sprite &sprite, const glm::vec2 &position,
-                         const glm::vec2 &scroll_factor, const glm::bvec2 &repeat = {true, true}, const glm::vec2 &scale = {1.0f, 1.0f});
+        void drawImage(const Camera &camera, const engine::render::Image &image, const glm::vec2 &position, const glm::vec2 &scale = {1.0f, 1.0f}, double angle = 0.0f);
 
         /// @brief 绘制UI
         /// @param sprite
         /// @param position
         /// @param size
-        void drawUISprite(const engine::render::Sprite &sprite, const glm::vec2 &position, const std::optional<glm::vec2> &size = std::nullopt);
+        void drawUIImage(const engine::render::Image &image, const glm::vec2 &position, const std::optional<glm::vec2> &size = std::nullopt);
 
         void drawUIFillRect(const engine::utils::Rect &rect, const engine::utils::FColor &color);
         /// @brief 更新屏幕
@@ -70,7 +60,7 @@ namespace engine::render
         /// @brief 获取精灵的源矩形
         /// @param sprite
         /// @return
-        std::optional<SDL_FRect> getSpriteSrcRect(const Sprite &sprite);
+        std::optional<SDL_FRect> getImageSrcRect(const Image &image);
         /// @brief 判断矩形是否在视口内
         /// @param camera
         /// @param rect

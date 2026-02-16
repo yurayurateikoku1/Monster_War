@@ -13,7 +13,7 @@ namespace engine::ui::state
 
     void UINormalState::enter()
     {
-        owner_->setSprite("normal"_hs);
+        owner_->setImage("normal"_hs);
     }
 
     std::unique_ptr<UIState> UINormalState::handleInput(engine::core::Context &context)

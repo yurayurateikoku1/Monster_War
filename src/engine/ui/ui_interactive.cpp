@@ -13,26 +13,26 @@ engine::ui::UIInteractive::UIInteractive(engine::core::Context &context, glm::ve
 
 engine::ui::UIInteractive::~UIInteractive() = default;
 
-void engine::ui::UIInteractive::addSprite(entt::id_type name_id, engine::render::Sprite sprite)
+void engine::ui::UIInteractive::addImage(entt::id_type name_id, engine::render::Image image)
 {
     // 可交互UI元素必须有一个size用于交互检测，因此如果参数列表中没有指定，则用图片大小作为size
     if (size_.x == 0.0f && size_.y == 0.0f)
     {
-        size_ = context_.getResourceManager().getTextureSize(sprite.getTextureId());
+        size_ = context_.getResourceManager().getTextureSize(image.getTextureId());
     }
     // 添加精灵
-    sprites_[name_id] = std::move(sprite);
+    images_[name_id] = std::move(image);
 }
 
-void engine::ui::UIInteractive::setSprite(entt::id_type name_id)
+void engine::ui::UIInteractive::setImage(entt::id_type name_id)
 {
-    if (sprites_.find(name_id) != sprites_.end())
+    if (images_.find(name_id) != images_.end())
     {
-        current_sprite_id_ = name_id;
+        current_image_id_ = name_id;
     }
     else
     {
-        spdlog::warn("Sprite '{}' not found", name_id);
+        spdlog::warn("Image '{}' not found", name_id);
     }
 }
 
@@ -97,7 +97,7 @@ void engine::ui::UIInteractive::render(engine::core::Context &context)
         return;
 
     // 先渲染自身
-    context.getRender().drawUISprite(sprites_[current_sprite_id_], getScreenPosition(), size_);
+    context.getRender().drawUIImage(images_[current_image_id_], getScreenPosition(), size_);
 
     UIElement::render(context);
 }

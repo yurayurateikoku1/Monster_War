@@ -1,7 +1,7 @@
 #pragma once
 #include "ui_element.h"
 #include "state/ui_state.h"
-#include "../render/sprite.h"
+#include "../render/image.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -18,9 +18,9 @@ namespace engine::ui
     protected:
         engine::core::Context &context_;
         std::unique_ptr<engine::ui::state::UIState> state_;
-        std::unordered_map<entt::id_type, engine::render::Sprite> sprites_;
+        std::unordered_map<entt::id_type, engine::render::Image> images_;
         std::unordered_map<entt::id_type, entt::id_type> sounds_;
-        entt::id_type current_sprite_id_;
+        entt::id_type current_image_id_;
         bool interactive_ = true;
 
     public:
@@ -29,10 +29,10 @@ namespace engine::ui
 
         virtual void clicked() {}
 
-        void addSprite(entt::id_type name_id, engine::render::Sprite sprite); ///< @brief 添加精灵
-        void setSprite(entt::id_type name_id);                                ///< @brief 设置当前显示的精灵
-        void addSound(entt::id_type name_id, entt::hashed_string path);       ///< @brief 添加音效
-        void playSound(entt::id_type name_id);                                ///< @brief 播放音效
+        void addImage(entt::id_type name_id, engine::render::Image image); ///< @brief 添加精灵
+        void setImage(entt::id_type name_id);                              ///< @brief 设置当前显示的精灵
+        void addSound(entt::id_type name_id, entt::hashed_string path);    ///< @brief 添加音效
+        void playSound(entt::id_type name_id);                             ///< @brief 播放音效
         // --- Getters and Setters ---
         void setState(std::unique_ptr<engine::ui::state::UIState> state);     ///< @brief 设置当前状态
         engine::ui::state::UIState *getState() const { return state_.get(); } ///< @brief 获取当前状态

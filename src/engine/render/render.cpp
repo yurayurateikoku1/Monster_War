@@ -20,18 +20,18 @@ engine::render::Renderer::Renderer(SDL_Renderer *sdl_renderer, engine::resource:
     spdlog::info("Renderer init successfully");
 }
 
-void engine::render::Renderer::drawSprite(const Camera &camera, const engine::render::Sprite &sprite, const glm::vec2 &position, const glm::vec2 &scale, double angle)
+void engine::render::Renderer::drawImage(const Camera &camera, const engine::render::Image &image, const glm::vec2 &position, const glm::vec2 &scale, double angle)
 {
-    auto texture = resource_manager_->getTexture(sprite.getTextureId());
+    auto texture = resource_manager_->getTexture(image.getTextureId());
     if (!texture)
     {
-        spdlog::error("Texture not found:{}", sprite.getTextureId());
+        spdlog::error("Texture not found:{}", image.getTextureId());
         return;
     }
-    auto src_rect = getSpriteSrcRect(sprite);
+    auto src_rect = getImageSrcRect(image);
     if (!src_rect.has_value())
     {
-        spdlog::error("Invalid source rectangle:{}", sprite.getTextureId());
+        spdlog::error("Invalid source rectangle:{}", image.getTextureId());
         return;
     }
 
@@ -44,79 +44,24 @@ void engine::render::Renderer::drawSprite(const Camera &camera, const engine::re
         return;
     }
 
-    if (!SDL_RenderTextureRotated(renderer_, texture, &src_rect.value(), &dest_rect, angle, NULL, sprite.isFlipped() ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE))
+    if (!SDL_RenderTextureRotated(renderer_, texture, &src_rect.value(), &dest_rect, angle, NULL, image.isFlipped() ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE))
     {
-        spdlog::error("Render texture failed:{},{}", sprite.getTextureId(), SDL_GetError());
+        spdlog::error("Render texture failed:{},{}", image.getTextureId(), SDL_GetError());
     }
 }
 
-void engine::render::Renderer::drawParallx(const Camera &camera, const engine::render::Sprite &sprite, const glm::vec2 &position, const glm::vec2 &scroll_factor, const glm::bvec2 &repeat, const glm::vec2 &scale)
+void engine::render::Renderer::drawUIImage(const engine::render::Image &image, const glm::vec2 &position, const std::optional<glm::vec2> &size)
 {
-    auto texture = resource_manager_->getTexture(sprite.getTextureId());
+    auto texture = resource_manager_->getTexture(image.getTextureId());
     if (!texture)
     {
-        spdlog::error("Texture not found:{}", sprite.getTextureId());
+        spdlog::error("Texture not found:{}", image.getTextureId());
         return;
     }
-    auto src_rect = getSpriteSrcRect(sprite);
-    if (!src_rect.has_value())
-    {
-        spdlog::error("Invalid source rectangle:{}", sprite.getTextureId());
-        return;
-    }
-    glm::vec2 position_screen = camera.world2ScreenWithParallax(position, scroll_factor);
-    float scale_w = src_rect.value().w * scale.x;
-    float scale_h = src_rect.value().h * scale.y;
-    glm::vec2 start;
-    glm::vec2 stop;
-    glm::vec2 viewport_size = camera.getViewportSize();
-    if (repeat.x)
-    {
-        start.x = glm::mod(position_screen.x, scale_w) - scale_w;
-        stop.x = viewport_size.x;
-    }
-    else
-    {
-        start.x = position_screen.x;
-        stop.x = glm::min(position_screen.x + scale_w, viewport_size.x); // 结束点是一个纹理宽度之后，但不超过视口宽度
-    }
-    if (repeat.y)
-    {
-        start.y = glm::mod(position_screen.y, scale_h) - scale_h;
-        stop.y = viewport_size.y;
-    }
-    else
-    {
-        start.y = position_screen.y;
-        stop.y = glm::min(position_screen.y + scale_h, viewport_size.y);
-    }
-
-    for (float y = start.y; y < stop.y; y += scale_h)
-    {
-        for (float x = start.x; x < stop.x; x += scale_w)
-        {
-            SDL_FRect dest_rect = {x, y, scale_w, scale_h};
-            if (!SDL_RenderTexture(renderer_, texture, nullptr, &dest_rect))
-            {
-                spdlog::error("Render texture failed:{},{}", sprite.getTextureId(), SDL_GetError());
-                return;
-            }
-        }
-    }
-}
-
-void engine::render::Renderer::drawUISprite(const engine::render::Sprite &sprite, const glm::vec2 &position, const std::optional<glm::vec2> &size)
-{
-    auto texture = resource_manager_->getTexture(sprite.getTextureId());
-    if (!texture)
-    {
-        spdlog::error("Texture not found:{}", sprite.getTextureId());
-        return;
-    }
-    auto src_rct = getSpriteSrcRect(sprite);
+    auto src_rct = getImageSrcRect(image);
     if (!src_rct.has_value())
     {
-        spdlog::error("Invalid source rectangle:{}", sprite.getTextureId());
+        spdlog::error("Invalid source rectangle:{}", image.getTextureId());
         return;
     }
     SDL_FRect dest_rect = {position.x, position.y, 0, 0};
@@ -130,9 +75,9 @@ void engine::render::Renderer::drawUISprite(const engine::render::Sprite &sprite
         dest_rect.w = src_rct.value().w;
         dest_rect.h = src_rct.value().h;
     }
-    if (!SDL_RenderTextureRotated(renderer_, texture, &src_rct.value(), &dest_rect, 0, nullptr, sprite.isFlipped() ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE))
+    if (!SDL_RenderTextureRotated(renderer_, texture, &src_rct.value(), &dest_rect, 0, nullptr, image.isFlipped() ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE))
     {
-        spdlog::error("Render texture failed:{},{}", sprite.getTextureId(), SDL_GetError());
+        spdlog::error("Render texture failed:{},{}", image.getTextureId(), SDL_GetError());
     }
 }
 
@@ -176,22 +121,22 @@ void engine::render::Renderer::setDrawColorFloat(float r, float g, float b, floa
     }
 }
 
-std::optional<SDL_FRect> engine::render::Renderer::getSpriteSrcRect(const Sprite &sprite)
+std::optional<SDL_FRect> engine::render::Renderer::getImageSrcRect(const engine::render::Image &image)
 {
-    SDL_Texture *texture = resource_manager_->getTexture(sprite.getTextureId());
+    SDL_Texture *texture = resource_manager_->getTexture(image.getTextureId());
     if (!texture)
     {
-        spdlog::error("Texture not found: {}", sprite.getTextureId());
+        spdlog::error("Texture not found: {}", image.getTextureId());
         return std::nullopt;
     }
-    auto src_rect = sprite.getSourceRect();
+    auto src_rect = image.getSourceRect();
     if (src_rect.has_value())
     {
         const auto &rect = src_rect.value();
         if (rect.size.x <= 0 || rect.size.y <= 0)
         {
             spdlog::error("Invalid source rectangle: texture={}, rect=({},{},{},{})",
-                          sprite.getTextureId(), rect.position.x, rect.position.y, rect.size.x, rect.size.y);
+                          image.getTextureId(), rect.position.x, rect.position.y, rect.size.x, rect.size.y);
             return std::nullopt;
         }
         // 将 SDL_Rect (int) 转换为 SDL_FRect (float)
@@ -206,7 +151,7 @@ std::optional<SDL_FRect> engine::render::Renderer::getSpriteSrcRect(const Sprite
         SDL_FRect result = {0, 0, 0, 0};
         if (!SDL_GetTextureSize(texture, &result.w, &result.h))
         {
-            spdlog::error("Get texture size failed:{}", sprite.getTextureId());
+            spdlog::error("Get texture size failed:{}", image.getTextureId());
             return std::nullopt;
         }
         return result;
