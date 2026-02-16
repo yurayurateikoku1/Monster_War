@@ -7,6 +7,9 @@
 #include "texture_manager.h"
 #include "audio_manager.h"
 #include "font_manager.h"
+#include <fstream>
+#include <filesystem>
+#include <nlohmann/json.hpp>
 #include <entt/core/hashed_string.hpp>
 engine::resource::ResourceManager::ResourceManager(SDL_Renderer *renderer)
 {
@@ -22,6 +25,54 @@ engine::resource::ResourceManager::~ResourceManager() = default;
 MIX_Mixer *engine::resource::ResourceManager::getMixer() const
 {
     return audio_manager_->getMixer();
+}
+
+void engine::resource::ResourceManager::loadResource(const std::string &file_path)
+{
+    std::filesystem::path path(file_path);
+    if (!std::filesystem::exists(path))
+    {
+        spdlog::error("File not found: {}", file_path);
+        return;
+    }
+    std::ifstream file(file_path);
+    nlohmann::json json;
+    file >> json;
+    try
+    {
+        if (json.contains("sound"))
+        {
+            for (const auto &[key, value] : json["sound"].items())
+            {
+                loadSound(entt::hashed_string(key.c_str()), value.get<std::string>());
+            }
+        }
+        if (json.contains("music"))
+        {
+            for (const auto &[key, value] : json["music"].items())
+            {
+                loadMusic(entt::hashed_string(key.c_str()), value.get<std::string>());
+            }
+        }
+        if (json.contains("texture"))
+        {
+            for (const auto &[key, value] : json["texture"].items())
+            {
+                loadTexture(entt::hashed_string(key.c_str()), value.get<std::string>());
+            }
+        }
+        if (json.contains("font"))
+        {
+            for (const auto &[key, value] : json["font"].items())
+            {
+                loadFont(entt::hashed_string(key.c_str()), value.get<std::string>(), value.get<int>());
+            }
+        }
+    }
+    catch (const std::exception &e)
+    {
+        spdlog::error("Failed to load resource: {},{},{},{}", file_path, e.what(), __FILE__, __LINE__);
+    }
 }
 
 void engine::resource::ResourceManager::clear()

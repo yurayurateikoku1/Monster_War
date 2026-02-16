@@ -36,6 +36,7 @@ namespace engine::resource
 
         MIX_Mixer *getMixer() const;
 
+        void loadResource(const std::string &file_path);
         //=====Texture=====
         SDL_Texture *loadTexture(entt::id_type id, const std::string &file_path);
         SDL_Texture *loadTexture(entt::hashed_string str_hs);

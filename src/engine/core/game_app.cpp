@@ -96,7 +96,8 @@ namespace engine::core
 
         // 获取显示缩放比例，用于在高DPI下创建正确大小的窗口
         float scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
-        if (scale < 1.0f) scale = 1.0f;
+        if (scale < 1.0f)
+            scale = 1.0f;
         int scaled_w = static_cast<int>(config_->window_width_ / scale);
         int scaled_h = static_cast<int>(config_->window_height_ / scale);
         spdlog::info("Display scale: {}, window size: {}x{} -> {}x{}", scale, config_->window_width_, config_->window_height_, scaled_w, scaled_h);
@@ -148,6 +149,7 @@ namespace engine::core
         {
             spdlog::error("ResourceManager init failed: {},{},{}", e.what(), __FILE__, __LINE__);
         }
+        resource_manager_->loadResource("assets/data/resource_mapping.json");
         return true;
     }
 
