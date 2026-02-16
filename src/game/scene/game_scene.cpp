@@ -17,6 +17,7 @@
 #include "../../engine/ui/ui_manager.h"
 #include "../../engine/ui/ui_image.h"
 #include "../../engine/ui/ui_label.h"
+#include "../../engine/loader/level_loader.h"
 #include <entt/core/hashed_string.hpp>
 using namespace entt::literals;
 
@@ -34,8 +35,12 @@ game::scene::GameScene::~GameScene()
 
 void game::scene::GameScene::init()
 {
-    testResourceMana();
-    testECS();
+    if (!loadlevel())
+    {
+        spdlog::error("Failed to load level");
+        return;
+    }
+
     Scene::init();
 }
 
@@ -60,38 +65,14 @@ void game::scene::GameScene::clean()
     Scene::clean();
 }
 
-void game::scene::GameScene::testResourceMana()
+bool game::scene::GameScene::loadlevel()
 {
-    // 载入资源
-    context_.getResourceManager().loadTexture("assets/textures/Buildings/Castle.png"_hs);
-    // 播放音乐
-    context_.getAudioPlayer().playMusic("battle_bgm"_hs);
+    engine::loader::LevelLoader level_loader;
+    if (!level_loader.loadLevel("assets/maps/level1.tmj", this))
+    {
+        spdlog::error("Failed to load level");
+        return false;
+    }
 
-    // 测试UI元素（使用载入的资源）
-    ui_manager_->addElement(std::make_unique<engine::ui::UIImage>("assets/textures/Buildings/Castle.png"_hs));
-    ui_manager_->addElement(std::make_unique<engine::ui::UILabel>(
-        context_.getTextRenderer(),
-        "Hello, World!",
-        "assets/fonts/VonwaonBitmap-16px.ttf"));
-}
-
-void game::scene::GameScene::testECS()
-{
-    auto entity = registry_.create();
-    // 变换、速度、精灵组件
-    registry_.emplace<engine::component::TransformComponent>(entity, glm::vec2(100, 100));
-    registry_.emplace<engine::component::VelocityComponent>(entity, glm::vec2(10, 10));
-    registry_.emplace<engine::component::SpriteComponent>(entity,
-                                                          engine::component::Sprite("assets/textures/Units/Archer.png", engine::utils::Rect(0, 0, 192, 192)));
-
-    // 动画组件 (单一动画 -> 动画map -> AnimationComponent)
-    auto animation = engine::component::Animation(
-        {engine::component::AnimationFrame(engine::utils::Rect(0, 0, 192, 192), 100),
-         engine::component::AnimationFrame(engine::utils::Rect(192, 0, 192, 192), 100),
-         engine::component::AnimationFrame(engine::utils::Rect(384, 0, 192, 192), 100),
-         engine::component::AnimationFrame(engine::utils::Rect(576, 0, 192, 192), 100),
-         engine::component::AnimationFrame(engine::utils::Rect(768, 0, 192, 192), 100),
-         engine::component::AnimationFrame(engine::utils::Rect(960, 0, 192, 192), 100)});
-    auto animation_map = std::unordered_map<entt::id_type, engine::component::Animation>{{"idle"_hs, std::move(animation)}};
-    registry_.emplace<engine::component::AnimationComponent>(entity, std::move(animation_map), "idle"_hs);
+    return true;
 }

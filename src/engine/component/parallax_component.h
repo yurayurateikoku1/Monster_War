@@ -1,5 +1,4 @@
 #pragma once
-#include "component.h"
 #include "../render/image.h"
 #include <string>
 #include <glm/vec2.hpp>

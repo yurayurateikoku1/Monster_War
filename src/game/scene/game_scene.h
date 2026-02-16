@@ -21,8 +21,6 @@ namespace game::scene
         void clean() override;
 
     private:
-        void testResourceMana();
-
-        void testECS();
+        [[nodiscard]] bool loadlevel();
     };
 }

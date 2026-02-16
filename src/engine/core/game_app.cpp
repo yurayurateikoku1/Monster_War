@@ -93,15 +93,11 @@ namespace engine::core
             return false;
         }
 
-        // 获取显示缩放比例，用于在高DPI下创建正确大小的窗口
-        float scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
-        if (scale < 1.0f)
-            scale = 1.0f;
-        int scaled_w = static_cast<int>(config_->window_width_ / scale);
-        int scaled_h = static_cast<int>(config_->window_height_ / scale);
-        spdlog::info("Display scale: {}, window size: {}x{} -> {}x{}", scale, config_->window_width_, config_->window_height_, scaled_w, scaled_h);
+        // 设置窗口大小 (窗口大小 * 窗口缩放比例)
+        int window_width = static_cast<int>(static_cast<float>(config_->window_width_) * config_->window_scale_);
+        int window_height = static_cast<int>(static_cast<float>(config_->window_height_) * config_->window_scale_);
+        window_ = SDL_CreateWindow(config_->window_title_.c_str(), window_width, window_height, SDL_WINDOW_RESIZABLE);
 
-        window_ = SDL_CreateWindow(config_->window_title_.c_str(), scaled_w, scaled_h, SDL_WINDOW_RESIZABLE);
         if (window_ == nullptr)
         {
             spdlog::error("SDL_CreateWindow failed: {}", SDL_GetError());
@@ -119,7 +115,10 @@ namespace engine::core
         int vsync_code = config_->vsync_enabled_ ? SDL_RENDERER_VSYNC_ADAPTIVE : SDL_RENDERER_VSYNC_DISABLED;
         SDL_SetRenderVSync(sdl_renderer_, vsync_code);
 
-        SDL_SetRenderLogicalPresentation(sdl_renderer_, config_->window_width_ / 2, config_->window_height_ / 2, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+        // 设置逻辑分辨率 (窗口大小 * 逻辑缩放比例)
+        int logical_width = static_cast<int>(static_cast<float>(config_->window_width_) * config_->window_logical_scale_);
+        int logical_height = static_cast<int>(static_cast<float>(config_->window_height_) * config_->window_logical_scale_);
+        SDL_SetRenderLogicalPresentation(sdl_renderer_, logical_width, logical_height, SDL_LOGICAL_PRESENTATION_LETTERBOX);
         return true;
     }
 
@@ -200,7 +199,7 @@ namespace engine::core
     {
         try
         {
-            camera_ = std::make_unique<engine::render::Camera>(glm::vec2(config_->window_width_ / 2, config_->window_height_ / 2));
+            camera_ = std::make_unique<engine::render::Camera>(game_state_->getLogicalSize());
         }
         catch (const std::exception &e)
         {
@@ -290,6 +289,10 @@ namespace engine::core
         {
             return false;
         }
+        if (!initGameState())
+        {
+            return false;
+        }
         if (!initTime())
         {
             return false;
@@ -318,10 +321,7 @@ namespace engine::core
         {
             return false;
         }
-        if (!initGameState())
-        {
-            return false;
-        }
+
         if (!initContext())
         {
             return false;

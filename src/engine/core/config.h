@@ -10,9 +10,11 @@ namespace engine::core
     {
     public:
         /* data */
-        std::string window_title_ = "Mario_DiePI";
+        std::string window_title_ = "Knight_War";
         int window_width_ = 1280;
         int window_height_ = 720;
+        float window_scale_ = 1.0f;
+        float window_logical_scale_ = 1.0f;
         bool window_resizable_ = true;
 
         bool vsync_enabled_ = true;
