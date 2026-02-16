@@ -13,43 +13,50 @@ engine::ui::UIInteractive::UIInteractive(engine::core::Context &context, glm::ve
 
 engine::ui::UIInteractive::~UIInteractive() = default;
 
-void engine::ui::UIInteractive::addSprite(const std::string &name, std::unique_ptr<engine::render::Sprite> sprite)
+void engine::ui::UIInteractive::addSprite(entt::id_type name_id, engine::render::Sprite sprite)
 {
     // 可交互UI元素必须有一个size用于交互检测，因此如果参数列表中没有指定，则用图片大小作为size
     if (size_.x == 0.0f && size_.y == 0.0f)
     {
-        size_ = context_.getResourceManager().getTextureSize(sprite->getTextureId());
+        size_ = context_.getResourceManager().getTextureSize(sprite.getTextureId());
     }
     // 添加精灵
-    sprites_[std::string(name)] = std::move(sprite);
+    sprites_[name_id] = std::move(sprite);
 }
 
-void engine::ui::UIInteractive::setSprite(const std::string &name)
+void engine::ui::UIInteractive::setSprite(entt::id_type name_id)
 {
-    if (sprites_.find(std::string(name)) != sprites_.end())
+    if (sprites_.find(name_id) != sprites_.end())
     {
-        current_sprite_ = sprites_[std::string(name)].get();
+        current_sprite_id_ = name_id;
     }
     else
     {
-        spdlog::warn("Sprite '{}' not found", name);
+        spdlog::warn("Sprite '{}' not found", name_id);
     }
 }
 
-void engine::ui::UIInteractive::addSound(const std::string &name, const std::string &path)
+void engine::ui::UIInteractive::addSound(entt::id_type name_id, entt::hashed_string path)
 {
-    sounds_[std::string(name)] = path;
+    sounds_.emplace(name_id, path.value());
+    context_.getResourceManager().loadSound(path);
 }
 
-void engine::ui::UIInteractive::playSound(const std::string &name)
+void engine::ui::UIInteractive::playSound(entt::id_type name_id)
 {
-    if (sounds_.find(std::string(name)) != sounds_.end())
+    if (auto it = sounds_.find(name_id); it != sounds_.end())
     {
-        context_.getAudioPlayer().playSound(sounds_[std::string(name)]);
+        if (context_.getAudioPlayer().playSound(it->second) == -1)
+        {
+            spdlog::warn("Sound '{}' not found or not loaded", name_id);
+        }
     }
     else
     {
-        spdlog::error("Sound '{}' 未找到", name);
+        if (context_.getAudioPlayer().playSound(name_id) == -1)
+        {
+            spdlog::error("Sound '{}' not found or not loaded", name_id);
+        }
     }
 }
 
@@ -90,7 +97,7 @@ void engine::ui::UIInteractive::render(engine::core::Context &context)
         return;
 
     // 先渲染自身
-    context.getRender().drawUISprite(*current_sprite_, getScreenPosition(), size_);
+    context.getRender().drawUISprite(sprites_[current_sprite_id_], getScreenPosition(), size_);
 
     UIElement::render(context);
 }

@@ -43,9 +43,9 @@ void engine::render::TextRenderer::close()
     TTF_Quit();
 }
 
-void engine::render::TextRenderer::drawUIText(const std::string &text, const std::string &font_id, int font_size, const glm::vec2 &position, const engine::utils::FColor &color)
+void engine::render::TextRenderer::drawUIText(const std::string &text, entt::id_type font_id, int font_size, const glm::vec2 &position, const std::string &font_path, const engine::utils::FColor &color)
 {
-    TTF_Font *font = resource_manager_->getFont(font_id, font_size);
+    TTF_Font *font = resource_manager_->getFont(font_id, font_size, font_path);
     if (!font)
     {
         spdlog::warn("Font not found: {} - {}", font_id, font_size);
@@ -70,15 +70,15 @@ void engine::render::TextRenderer::drawUIText(const std::string &text, const std
     TTF_DestroyText(temp_text_object);
 }
 
-void engine::render::TextRenderer::drawText(const Camera &camera, const std::string &text, const std::string &font_id, int font_size, const glm::vec2 &position, const engine::utils::FColor &color)
+void engine::render::TextRenderer::drawText(const Camera &camera, const std::string &text, entt::id_type font_id, int font_size, const glm::vec2 &position, const engine::utils::FColor &color)
 {
     glm::vec2 position_screen = camera.world2Screen(position);
-    drawUIText(text, font_id, font_size, position_screen, color);
+    drawUIText(text, font_id, font_size, position_screen, "", color);
 }
 
-glm::vec2 engine::render::TextRenderer::getTextSize(const std::string &text, const std::string &font_id, int font_size)
+glm::vec2 engine::render::TextRenderer::getTextSize(const std::string &text, entt::id_type font_id, int font_size, const std::string &font_path)
 {
-    TTF_Font *font = resource_manager_->getFont(font_id, font_size);
+    TTF_Font *font = resource_manager_->getFont(font_id, font_size, font_path);
     if (!font)
     {
         spdlog::warn("Font not found: {} - {}", font_id, font_size);

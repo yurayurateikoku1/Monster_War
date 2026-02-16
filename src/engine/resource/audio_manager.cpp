@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
+#include <entt/core/hashed_string.hpp>
 engine::resource::AudioManager::AudioManager()
 {
     if (!MIX_Init())
@@ -29,17 +30,17 @@ engine::resource::AudioManager::~AudioManager()
     MIX_Quit();
 }
 
-MIX_Audio *engine::resource::AudioManager::loadSound(const std::string &file_path)
+MIX_Audio *engine::resource::AudioManager::loadSound(entt::id_type id, const std::string &file_path)
 {
     // 检查是否已经加载
-    auto it = audios_.find(file_path);
+    auto it = audios_.find(id);
     if (it != audios_.end())
     {
         return it->second.get();
     }
 
     // 加载音频文件
-    MIX_Audio *audio = MIX_LoadAudio(mixer_, file_path.c_str(), false);
+    MIX_Audio *audio = MIX_LoadAudio(mixer_, file_path.data(), false);
     if (!audio)
     {
         spdlog::error("Failed to load sound: {} - {}", file_path, SDL_GetError());
@@ -47,72 +48,99 @@ MIX_Audio *engine::resource::AudioManager::loadSound(const std::string &file_pat
     }
 
     // 存储到容器中
-    audios_[file_path] = std::unique_ptr<MIX_Audio, SDLAudioDeleter>(audio);
+    audios_[id] = std::unique_ptr<MIX_Audio, SDLAudioDeleter>(audio);
     spdlog::info("Loaded sound: {}", file_path);
     return audio;
 }
 
-MIX_Audio *engine::resource::AudioManager::loadMusic(const std::string &file_path)
+MIX_Audio *engine::resource::AudioManager::loadSound(entt::hashed_string str_hs)
+{
+    return loadSound(str_hs.value(), str_hs.data());
+}
+
+MIX_Audio *engine::resource::AudioManager::loadMusic(entt::id_type id, const std::string &file_path)
 {
     // 检查是否已经加载
-    auto it = musics_.find(file_path);
+    auto it = musics_.find(id);
     if (it != musics_.end())
     {
         return it->second.get();
     }
 
     // 加载音乐文件 (预解码以减少播放时的 CPU 负载)
-    MIX_Audio *music = MIX_LoadAudio(mixer_, file_path.c_str(), true);
+    MIX_Audio *music = MIX_LoadAudio(mixer_, file_path.data(), true);
     if (!music)
     {
-        spdlog::error("Failed to load music: {} - {}", file_path, SDL_GetError());
+        spdlog::error("Failed to load music: {} - {}", id, SDL_GetError());
         return nullptr;
     }
 
     // 存储到容器中
-    musics_[file_path] = std::unique_ptr<MIX_Audio, SDLAudioDeleter>(music);
-    spdlog::info("Loaded music: {}", file_path);
+    musics_[id] = std::unique_ptr<MIX_Audio, SDLAudioDeleter>(music);
+    spdlog::info("Loaded music: {}", id);
     return music;
 }
-
-void engine::resource::AudioManager::unloadSound(const std::string &file_path)
+MIX_Audio *engine::resource::AudioManager::loadMusic(entt::hashed_string str_hs)
 {
-    auto it = audios_.find(file_path);
+    return loadMusic(str_hs.value(), str_hs.data());
+}
+
+void engine::resource::AudioManager::unloadSound(entt::id_type id)
+{
+    auto it = audios_.find(id);
     if (it != audios_.end())
     {
         audios_.erase(it);
-        spdlog::info("Unloaded sound: {}", file_path);
+        spdlog::info("Unloaded sound: {}", id);
     }
 }
 
-void engine::resource::AudioManager::unloadMusic(const std::string &file_path)
+void engine::resource::AudioManager::unloadMusic(entt::id_type id)
 {
-    auto it = musics_.find(file_path);
+    auto it = musics_.find(id);
     if (it != musics_.end())
     {
         musics_.erase(it);
-        spdlog::info("Unloaded music: {}", file_path);
+        spdlog::info("Unloaded music: {}", id);
     }
 }
 
-MIX_Audio *engine::resource::AudioManager::getSound(const std::string &file_path)
+MIX_Audio *engine::resource::AudioManager::getSound(entt::id_type id, const std::string &file_path)
 {
-    auto it = audios_.find(file_path);
+    auto it = audios_.find(id);
     if (it != audios_.end())
     {
         return it->second.get();
     }
+    if (!file_path.empty())
+    {
+        return loadSound(id, file_path);
+    }
     return nullptr;
 }
 
-MIX_Audio *engine::resource::AudioManager::getMusic(const std::string &file_path)
+MIX_Audio *engine::resource::AudioManager::getSound(entt::hashed_string str_hs)
 {
-    auto it = musics_.find(file_path);
+    return getSound(str_hs.value(), str_hs.data());
+}
+
+MIX_Audio *engine::resource::AudioManager::getMusic(entt::id_type id, const std::string &file_path)
+{
+    auto it = musics_.find(id);
     if (it != musics_.end())
     {
         return it->second.get();
     }
+    if (!file_path.empty())
+    {
+        return loadMusic(id, file_path);
+    }
     return nullptr;
+}
+
+MIX_Audio *engine::resource::AudioManager::getMusic(entt::hashed_string str_hs)
+{
+    return getMusic(str_hs.value(), str_hs.data());
 }
 
 void engine::resource::AudioManager::clearSounds()

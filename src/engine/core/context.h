@@ -1,4 +1,5 @@
 #pragma once
+#include <entt/signal/fwd.hpp>
 namespace engine::input
 {
     class InputManager;
@@ -27,6 +28,8 @@ namespace engine::core
     class Context final
     {
     private:
+        /// @brief 事件分发器
+        entt::dispatcher &dispatcher_;
         /// @brief 输入管理器
         engine::input::InputManager &input_manager_;
         /// @brief 渲染器
@@ -41,7 +44,8 @@ namespace engine::core
         engine::core::GameState &game_state_;
 
     public:
-        Context(engine::input::InputManager &input_manager,
+        Context(entt::dispatcher &dispatcher,
+                engine::input::InputManager &input_manager,
                 engine::render::Renderer &render,
                 engine::resource::ResourceManager &resource_manager,
                 engine::render::Camera &camera,
@@ -53,6 +57,7 @@ namespace engine::core
         Context &operator=(const Context &) = delete;
         Context &operator=(Context &&) = delete;
 
+        entt::dispatcher &getDispatcher() const { return dispatcher_; }
         engine::input::InputManager &getInputManager() const { return input_manager_; }
         engine::render::Renderer &getRender() const { return renderer_; }
         engine::resource::ResourceManager &getResourceManager() const { return resource_manager_; }

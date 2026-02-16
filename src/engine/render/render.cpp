@@ -188,18 +188,18 @@ std::optional<SDL_FRect> engine::render::Renderer::getSpriteSrcRect(const Sprite
     if (src_rect.has_value())
     {
         const auto &rect = src_rect.value();
-        if (rect.w <= 0 || rect.h <= 0)
+        if (rect.size.x <= 0 || rect.size.y <= 0)
         {
             spdlog::error("Invalid source rectangle: texture={}, rect=({},{},{},{})",
-                          sprite.getTextureId(), rect.x, rect.y, rect.w, rect.h);
+                          sprite.getTextureId(), rect.position.x, rect.position.y, rect.size.x, rect.size.y);
             return std::nullopt;
         }
         // 将 SDL_Rect (int) 转换为 SDL_FRect (float)
         return SDL_FRect{
-            static_cast<float>(rect.x),
-            static_cast<float>(rect.y),
-            static_cast<float>(rect.w),
-            static_cast<float>(rect.h)};
+            static_cast<float>(rect.position.x),
+            static_cast<float>(rect.position.y),
+            static_cast<float>(rect.size.x),
+            static_cast<float>(rect.size.y)};
     }
     else
     {

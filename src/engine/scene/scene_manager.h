@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 #include <vector>
-
+#include "../utils/events.h"
 namespace engine::core
 {
     class Context;
@@ -39,15 +39,6 @@ namespace engine::scene
         SceneManager &operator=(const SceneManager &) = delete;
         SceneManager &operator=(SceneManager &&) = delete;
 
-        /// @brief  请求压入场景
-        /// @param scene
-        void requestPushScene(std::unique_ptr<Scene> &&scene);
-        /// @brief  请求弹出场景
-        void requestPopScene();
-        /// @brief  请求替换场景
-        /// @param scene
-        void requestReplaceScene(std::unique_ptr<Scene> &&scene);
-
         Scene *getCurrentScene() const;
         engine::core::Context &getContext() const { return context_; }
 
@@ -57,6 +48,10 @@ namespace engine::scene
         void close();
 
     private:
+        void onPopScene();
+        void onPushScene(engine::utils::PushSceneEvent &event);
+        void onReplaceScene(engine::utils::ReplaceSceneEvent &event);
+
         void processPendingActions();
         void pushScene(std::unique_ptr<Scene> &&scene);
         void popScene();

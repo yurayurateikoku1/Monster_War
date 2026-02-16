@@ -6,7 +6,13 @@ namespace game::scene
     class GameScene final : public engine::scene::Scene
     {
     public:
-        GameScene(engine::core::Context &context, engine::scene::SceneManager &scene_manager);
+        GameScene(engine::core::Context &context);
         ~GameScene();
+
+        void init() override;
+        void clean() override;
+
+    private:
+        void testResourceMana();
     };
 }

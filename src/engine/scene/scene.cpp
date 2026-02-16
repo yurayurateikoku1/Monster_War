@@ -7,8 +7,10 @@
 #include "../core/game_state.h"
 #include "../ui/ui_manager.h"
 #include <algorithm>
-engine::scene::Scene::Scene(const std::string &scene_name, engine::core::Context &context, engine::scene::SceneManager &scene_manager)
-    : scene_name_(scene_name), context_(context), scene_manager_(scene_manager), is_initialized_(false), ui_manager_(std::make_unique<engine::ui::UIManager>())
+#include "../utils/events.h"
+#include <entt/signal/dispatcher.hpp>
+engine::scene::Scene::Scene(const std::string &scene_name, engine::core::Context &context)
+    : scene_name_(scene_name), context_(context), is_initialized_(false), ui_manager_(std::make_unique<engine::ui::UIManager>())
 {
     spdlog::info("Scene {} created", scene_name_);
 }
@@ -180,6 +182,26 @@ engine::object::GameObject *engine::scene::Scene::findGameObjectByName(const std
         }
     }
     return nullptr;
+}
+
+void engine::scene::Scene::requestPopScene()
+{
+    context_.getDispatcher().trigger<engine::utils::PopSceneEvent>();
+}
+
+void engine::scene::Scene::requestPushScene(std::unique_ptr<engine::scene::Scene> &&scene)
+{
+    context_.getDispatcher().trigger<engine::utils::PushSceneEvent>(engine::utils::PushSceneEvent{std::move(scene)});
+}
+
+void engine::scene::Scene::requestReplaceScene(std::unique_ptr<engine::scene::Scene> &&scene)
+{
+    context_.getDispatcher().trigger<engine::utils::ReplaceSceneEvent>(engine::utils::ReplaceSceneEvent{std::move(scene)});
+}
+
+void engine::scene::Scene::requestQuit()
+{
+    context_.getDispatcher().trigger<engine::utils::QuitEvent>();
 }
 
 void engine::scene::Scene::processPendingAdditions()

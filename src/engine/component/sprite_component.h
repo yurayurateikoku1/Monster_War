@@ -56,7 +56,7 @@ namespace engine::component
         void updateOffset();
 
         const engine::render::Sprite &getSprite() const { return sprite_; }
-        const std::string &getTextureId() const { return sprite_.getTextureId(); }
+        entt::id_type getTextureId() const { return sprite_.getTextureId(); }
         bool isFlipped() const { return sprite_.isFlipped(); }
         bool isHidden() const { return is_hidden_; }
         const glm::vec2 &getOffset() const { return offset_; }

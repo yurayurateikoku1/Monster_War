@@ -5,7 +5,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-
+#include <entt/core/hashed_string.hpp>
 namespace engine::core
 {
     class Context;
@@ -18,9 +18,9 @@ namespace engine::ui
     protected:
         engine::core::Context &context_;
         std::unique_ptr<engine::ui::state::UIState> state_;
-        std::unordered_map<std::string, std::unique_ptr<engine::render::Sprite>> sprites_;
-        std::unordered_map<std::string, std::string> sounds_;
-        engine::render::Sprite *current_sprite_ = nullptr;
+        std::unordered_map<entt::id_type, engine::render::Sprite> sprites_;
+        std::unordered_map<entt::id_type, entt::id_type> sounds_;
+        entt::id_type current_sprite_id_;
         bool interactive_ = true;
 
     public:
@@ -29,10 +29,10 @@ namespace engine::ui
 
         virtual void clicked() {}
 
-        void addSprite(const std::string &name, std::unique_ptr<engine::render::Sprite> sprite); ///< @brief 添加精灵
-        void setSprite(const std::string &name);                                                 ///< @brief 设置当前显示的精灵
-        void addSound(const std::string &name, const std::string &path);                         ///< @brief 添加音效
-        void playSound(const std::string &name);                                                 ///< @brief 播放音效
+        void addSprite(entt::id_type name_id, engine::render::Sprite sprite); ///< @brief 添加精灵
+        void setSprite(entt::id_type name_id);                                ///< @brief 设置当前显示的精灵
+        void addSound(entt::id_type name_id, entt::hashed_string path);       ///< @brief 添加音效
+        void playSound(entt::id_type name_id);                                ///< @brief 播放音效
         // --- Getters and Setters ---
         void setState(std::unique_ptr<engine::ui::state::UIState> state);     ///< @brief 设置当前状态
         engine::ui::state::UIState *getState() const { return state_.get(); } ///< @brief 获取当前状态

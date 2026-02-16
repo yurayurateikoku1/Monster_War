@@ -6,16 +6,19 @@
 #include <utility>
 #include <functional>
 #include <glm/glm.hpp>
+#include <entt/core/fwd.hpp>
 namespace engine::resource
 {
-    using FontKey = std::pair<std::string, int>;
+    using FontKey = std::pair<entt::id_type, int>;
     struct FontKeyHash
     {
-        std::size_t operator()(const FontKey &key) const
+        std::size_t operator()(const FontKey &key) const noexcept
         {
-            std::hash<std::string> str_hash;
-            std::hash<int> int_hash;
-            return str_hash(key.first) ^ int_hash(key.second);
+            // 采用C++20标准库的hash_combine实现思路
+            std::size_t h1 = std::hash<entt::id_type>{}(key.first);
+            std::size_t h2 = std::hash<int>{}(key.second);
+            //
+            return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
         }
     };
 
@@ -48,9 +51,15 @@ namespace engine::resource
         SDL_Renderer *renderer_ = nullptr;
         std::unordered_map<FontKey, std::unique_ptr<TTF_Font, SDLFontDeleter>, FontKeyHash> fonts_;
 
-        TTF_Font *loadFont(const std::string &file_path, int font_size);
-        void unloadFont(const std::string &file_path, int font_size);
-        TTF_Font *getFont(const std::string &file_path, int font_size);
+        TTF_Font *loadFont(entt::id_type id, int point_size, const std::string &file_path);
+
+        TTF_Font *loadFont(entt::hashed_string str_hs, int point_size);
+
+        TTF_Font *getFont(entt::id_type id, int point_size, const std::string &file_path = "");
+
+        TTF_Font *getFont(entt::hashed_string str_hs, int point_size);
+
+        void unloadFont(entt::id_type id, int point_size);
         void clearFonts();
     };
 }

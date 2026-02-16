@@ -16,6 +16,8 @@
 #include "../component/sprite_component.h"
 #include "../scene/scene_manager.h"
 #include "config.h"
+#include "../utils/events.h"
+#include <entt/signal/dispatcher.hpp>
 namespace engine::core
 {
     GameApp::GameApp()
@@ -41,7 +43,6 @@ namespace engine::core
         {
             time_->update();
             float dt = time_->getDeltaTime();
-            input_manager_->update();
             handleEvents();
             scene_manager_->handleInput();
             update(dt);
@@ -50,9 +51,24 @@ namespace engine::core
         close();
     }
 
-    void GameApp::registerSceneSutep(std::function<void(engine::scene::SceneManager &)> scene_setup_func)
+    void GameApp::registerSceneSutep(std::function<void(engine::core::Context &)> scene_setup_func)
     {
         scene_setup_func_ = std::move(scene_setup_func);
+    }
+
+    bool GameApp::iniDispatcher()
+    {
+        try
+        {
+            dispatcher_ = std::make_unique<entt::dispatcher>();
+        }
+        catch (const std::exception &e)
+        {
+            spdlog::error("Dispatcher init failed: {},{},{}", e.what(), __FILE__, __LINE__);
+            return false;
+        }
+
+        return true;
     }
 
     bool GameApp::initConfig()
@@ -77,7 +93,15 @@ namespace engine::core
             spdlog::error("SDL_Init failed: {}", SDL_GetError());
             return false;
         }
-        window_ = SDL_CreateWindow(config_->window_title_.c_str(), config_->window_width_, config_->window_height_, SDL_WINDOW_RESIZABLE);
+
+        // 获取显示缩放比例，用于在高DPI下创建正确大小的窗口
+        float scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
+        if (scale < 1.0f) scale = 1.0f;
+        int scaled_w = static_cast<int>(config_->window_width_ / scale);
+        int scaled_h = static_cast<int>(config_->window_height_ / scale);
+        spdlog::info("Display scale: {}, window size: {}x{} -> {}x{}", scale, config_->window_width_, config_->window_height_, scaled_w, scaled_h);
+
+        window_ = SDL_CreateWindow(config_->window_title_.c_str(), scaled_w, scaled_h, SDL_WINDOW_RESIZABLE);
         if (window_ == nullptr)
         {
             spdlog::error("SDL_CreateWindow failed: {}", SDL_GetError());
@@ -190,7 +214,7 @@ namespace engine::core
     {
         try
         {
-            input_manager_ = std::make_unique<engine::input::InputManager>(sdl_renderer_, config_.get());
+            input_manager_ = std::make_unique<engine::input::InputManager>(sdl_renderer_, config_.get(), dispatcher_.get());
         }
         catch (const std::exception &e)
         {
@@ -219,7 +243,7 @@ namespace engine::core
     {
         try
         {
-            context_ = std::make_unique<engine::core::Context>(*input_manager_, *renderer_, *resource_manager_, *camera_,
+            context_ = std::make_unique<engine::core::Context>(*dispatcher_, *input_manager_, *renderer_, *resource_manager_, *camera_,
                                                                *text_renderer_, *audio_player_, *game_state_);
         }
         catch (const std::exception &e)
@@ -250,6 +274,10 @@ namespace engine::core
         if (!scene_setup_func_)
         {
             spdlog::error("Scene setup function is not set");
+            return false;
+        }
+        if (!iniDispatcher())
+        {
             return false;
         }
 
@@ -302,8 +330,11 @@ namespace engine::core
             /* code */
             return false;
         }
+        // 调用场景设置函数
+        scene_setup_func_(*context_);
 
-        scene_setup_func_(*scene_manager_);
+        // 注册退出事件
+        dispatcher_->sink<engine::utils::QuitEvent>().connect<&GameApp::onQuitEvent>(this);
 
         is_running_ = true;
         spdlog::info("GameApp init success");
@@ -312,17 +343,17 @@ namespace engine::core
 
     void GameApp::handleEvents()
     {
-        if (input_manager_->getShouldQuit())
-        {
-            /* code */
-            is_running_ = false;
-            return;
-        }
+        input_manager_->update();
+        scene_manager_->handleInput();
     }
 
     void GameApp::update([[maybe_unused]] float dt)
     {
+        // 游戏逻辑更新
         scene_manager_->update(dt);
+
+        // 分发事件
+        dispatcher_->update();
     }
 
     void GameApp::render()
@@ -335,7 +366,14 @@ namespace engine::core
     void GameApp::close()
     {
         spdlog::info("GameApp close ...");
+
+        // 断开事件处理函数
+        dispatcher_->sink<engine::utils::QuitEvent>().disconnect<&GameApp::onQuitEvent>(this);
+
+        // 先关闭场景管理器
         scene_manager_->close();
+
+        // 确保正确的销毁顺序
         resource_manager_.reset();
         if (sdl_renderer_ != nullptr)
         {
@@ -349,6 +387,12 @@ namespace engine::core
         }
 
         SDL_Quit();
+        is_running_ = false;
+    }
+
+    void GameApp::onQuitEvent()
+    {
+        spdlog::info("GameApp receive quit event");
         is_running_ = false;
     }
 }

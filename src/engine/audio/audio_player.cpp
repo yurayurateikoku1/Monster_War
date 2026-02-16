@@ -3,6 +3,7 @@
 #include <SDL3_mixer/SDL_mixer.h>
 #include <spdlog/spdlog.h>
 #include <glm/glm.hpp>
+#include <entt/core/hashed_string.hpp>
 
 engine::audio::AudioPlayer::AudioPlayer(engine::resource::ResourceManager *resource_manager)
     : resource_manager_(resource_manager)
@@ -32,23 +33,14 @@ engine::audio::AudioPlayer::~AudioPlayer()
         MIX_DestroyTrack(soundTrack_);
         soundTrack_ = nullptr;
     }
-    if (musicAudio_)
-    {
-        MIX_DestroyAudio(musicAudio_);
-        musicAudio_ = nullptr;
-    }
-    if (soundAudio_)
-    {
-        MIX_DestroyAudio(soundAudio_);
-        soundAudio_ = nullptr;
-    }
 }
 
-int engine::audio::AudioPlayer::playSound(const std::string &sound_path, int channel)
+int engine::audio::AudioPlayer::playSound(entt::id_type sound_id, int channel)
 {
-    MIX_Audio *audio = resource_manager_->loadSound(sound_path);
+    MIX_Audio *audio = resource_manager_->getSound(sound_id);
     if (!audio)
     {
+        spdlog::error("Sound not found for id: {}", sound_id);
         return -1;
     }
 
@@ -62,20 +54,7 @@ int engine::audio::AudioPlayer::playSound(const std::string &sound_path, int cha
         }
     }
 
-    if (soundAudio_)
-    {
-        MIX_DestroyAudio(soundAudio_);
-        soundAudio_ = nullptr;
-    }
-
-    soundAudio_ = MIX_LoadAudio(mixer_, sound_path.c_str(), false);
-    if (!soundAudio_)
-    {
-        spdlog::error("Failed to reload sound audio: {}", SDL_GetError());
-        return -1;
-    }
-
-    if (!MIX_SetTrackAudio(soundTrack_, soundAudio_))
+    if (!MIX_SetTrackAudio(soundTrack_, audio))
     {
         spdlog::error("Failed to set track audio: {}", SDL_GetError());
         return -1;
@@ -92,17 +71,57 @@ int engine::audio::AudioPlayer::playSound(const std::string &sound_path, int cha
     }
 
     SDL_DestroyProperties(props);
-    spdlog::info("Playing sound: {}", sound_path);
     return 0;
 }
 
-int engine::audio::AudioPlayer::playMusic(const std::string &music_path, int loops, int fade_in_ms)
+int engine::audio::AudioPlayer::playSound(entt::hashed_string hashed_path, int channel)
 {
-    if (music_path == current_music_)
+    MIX_Audio *audio = resource_manager_->getSound(hashed_path);
+    if (!audio)
     {
-        return true;
+        spdlog::error("Sound not found: {}", hashed_path.data());
+        return -1;
     }
-    current_music_ = music_path;
+
+    if (!soundTrack_)
+    {
+        soundTrack_ = MIX_CreateTrack(mixer_);
+        if (!soundTrack_)
+        {
+            spdlog::error("Failed to create sound track: {}", SDL_GetError());
+            return -1;
+        }
+    }
+
+    if (!MIX_SetTrackAudio(soundTrack_, audio))
+    {
+        spdlog::error("Failed to set track audio: {}", SDL_GetError());
+        return -1;
+    }
+
+    SDL_PropertiesID props = SDL_CreateProperties();
+    SDL_SetNumberProperty(props, MIX_PROP_PLAY_LOOPS_NUMBER, 0);
+
+    if (!MIX_PlayTrack(soundTrack_, props))
+    {
+        spdlog::error("Failed to play sound track: {}", SDL_GetError());
+        SDL_DestroyProperties(props);
+        return -1;
+    }
+
+    SDL_DestroyProperties(props);
+    return 0;
+}
+
+int engine::audio::AudioPlayer::playMusic(entt::id_type music_id, int loops, int fade_in_ms)
+{
+    MIX_Audio *audio = resource_manager_->getMusic(music_id);
+    if (!audio)
+    {
+        spdlog::error("Music not found for id: {}", music_id);
+        return -1;
+    }
+
     if (!musicTrack_)
     {
         musicTrack_ = MIX_CreateTrack(mixer_);
@@ -113,20 +132,7 @@ int engine::audio::AudioPlayer::playMusic(const std::string &music_path, int loo
         }
     }
 
-    if (musicAudio_)
-    {
-        MIX_DestroyAudio(musicAudio_);
-        musicAudio_ = nullptr;
-    }
-
-    musicAudio_ = MIX_LoadAudio(mixer_, music_path.c_str(), true);
-    if (!musicAudio_)
-    {
-        spdlog::error("Failed to load music: {}", SDL_GetError());
-        return -1;
-    }
-
-    if (!MIX_SetTrackAudio(musicTrack_, musicAudio_))
+    if (!MIX_SetTrackAudio(musicTrack_, audio))
     {
         spdlog::error("Failed to set track audio: {}", SDL_GetError());
         return -1;
@@ -149,8 +155,51 @@ int engine::audio::AudioPlayer::playMusic(const std::string &music_path, int loo
     }
 
     SDL_DestroyProperties(props);
-    current_music_ = music_path;
-    spdlog::info("Playing music: {}", music_path);
+    return 0;
+}
+
+int engine::audio::AudioPlayer::playMusic(entt::hashed_string hashed_path, int loops, int fade_in_ms)
+{
+    MIX_Audio *audio = resource_manager_->getMusic(hashed_path);
+    if (!audio)
+    {
+        spdlog::error("Music not found: {}", hashed_path.data());
+        return -1;
+    }
+
+    if (!musicTrack_)
+    {
+        musicTrack_ = MIX_CreateTrack(mixer_);
+        if (!musicTrack_)
+        {
+            spdlog::error("Failed to create music track: {}", SDL_GetError());
+            return -1;
+        }
+    }
+
+    if (!MIX_SetTrackAudio(musicTrack_, audio))
+    {
+        spdlog::error("Failed to set track audio: {}", SDL_GetError());
+        return -1;
+    }
+
+    MIX_SetTrackGain(musicTrack_, 0.05f);
+
+    SDL_PropertiesID props = SDL_CreateProperties();
+    SDL_SetNumberProperty(props, MIX_PROP_PLAY_LOOPS_NUMBER, loops);
+    if (fade_in_ms > 0)
+    {
+        SDL_SetNumberProperty(props, MIX_PROP_PLAY_FADE_IN_MILLISECONDS_NUMBER, fade_in_ms);
+    }
+
+    if (!MIX_PlayTrack(musicTrack_, props))
+    {
+        spdlog::error("Failed to play music track: {}", SDL_GetError());
+        SDL_DestroyProperties(props);
+        return -1;
+    }
+
+    SDL_DestroyProperties(props);
     return 0;
 }
 

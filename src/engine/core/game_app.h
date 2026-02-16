@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <functional>
+#include <entt/signal/fwd.hpp>
 struct SDL_Window;
 struct SDL_Renderer;
 struct MIX_Mixer;
@@ -42,8 +43,9 @@ namespace engine::core
         MIX_Mixer *mixer_ = nullptr;
         bool is_running_{false};
 
-        std::function<void(engine::scene::SceneManager &)> scene_setup_func_;
+        std::function<void(engine::core::Context &)> scene_setup_func_;
 
+        std::unique_ptr<entt::dispatcher> dispatcher_; // 事件分发器
         std::unique_ptr<engine::core::Time> time_{nullptr};
         std::unique_ptr<engine::resource::ResourceManager> resource_manager_{nullptr};
         std::unique_ptr<engine::render::Renderer> renderer_{nullptr};
@@ -72,7 +74,9 @@ namespace engine::core
 
         void run();
 
-        void registerSceneSutep(std::function<void(engine::scene::SceneManager &)> scene_setup_func);
+        void registerSceneSutep(std::function<void(engine::core::Context &)> scene_setup_func);
+
+        [[nodiscard]] bool iniDispatcher();
         [[nodiscard]] bool initConfig();
         [[nodiscard]] bool initSDL();
         [[nodiscard]] bool initTime();
@@ -85,6 +89,8 @@ namespace engine::core
         [[nodiscard]] bool initGameState();
         [[nodiscard]] bool initContext();
         [[nodiscard]] bool initSceneManager();
+
+        void onQuitEvent();
     };
 
 }

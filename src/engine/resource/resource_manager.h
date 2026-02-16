@@ -2,7 +2,7 @@
 #include <string>
 #include <memory>
 #include <glm/glm.hpp>
-
+#include <entt/core/fwd.hpp>
 struct SDL_Renderer;
 struct SDL_Texture;
 struct MIX_Audio;
@@ -37,28 +37,37 @@ namespace engine::resource
         MIX_Mixer *getMixer() const;
 
         //=====Texture=====
-        SDL_Texture *loadTexture(const std::string &file_path);
-        SDL_Texture *getTexture(const std::string &file_path);
-        void unloadTexture(const std::string &file_path);
-        glm::vec2 getTextureSize(const std::string &file_path);
+        SDL_Texture *loadTexture(entt::id_type id, const std::string &file_path);
+        SDL_Texture *loadTexture(entt::hashed_string str_hs);
+        SDL_Texture *getTexture(entt::id_type id, const std::string &file_path = "");
+        SDL_Texture *getTexture(entt::hashed_string str_hs);
+        void unloadTexture(entt::id_type id);
+        glm::vec2 getTextureSize(entt::id_type id, const std::string &file_path = "");
+        glm::vec2 getTextureSize(entt::hashed_string str_hs);
         void clearTextures();
 
         //=====Sound=====
-        MIX_Audio *loadSound(const std::string &file_path);
-        MIX_Audio *getSound(const std::string &file_path);
-        void unloadSound(const std::string &file_path);
+        MIX_Audio *loadSound(entt::id_type id, const std::string &file_path);
+        MIX_Audio *loadSound(entt::hashed_string str_hs);
+        MIX_Audio *getSound(entt::id_type id, const std::string &file_path = "");
+        MIX_Audio *getSound(entt::hashed_string str_hs);
+        void unloadSound(entt::id_type id);
         void clearSounds();
 
         //=====Music=====
-        MIX_Audio *loadMusic(const std::string &file_path);
-        MIX_Audio *getMusic(const std::string &file_path);
-        void unloadMusic(const std::string &file_path);
+        MIX_Audio *loadMusic(entt::id_type id, const std::string &file_path);
+        MIX_Audio *loadMusic(entt::hashed_string str_hs);
+        MIX_Audio *getMusic(entt::id_type id, const std::string &file_path = "");
+        MIX_Audio *getMusic(entt::hashed_string str_hs);
+        void unloadMusic(entt::id_type id);
         void clearMusics();
 
         //=====Font=====
-        TTF_Font *loadFont(const std::string &file_path, int font_size);
-        TTF_Font *getFont(const std::string &file_path, int font_size);
-        void unloadFont(const std::string &file_path, int font_size);
+        TTF_Font *loadFont(entt::id_type id, const std::string &file_path, int font_size);
+        TTF_Font *loadFont(entt::hashed_string str_hs, int font_size);
+        TTF_Font *getFont(entt::id_type id, int font_size, const std::string &file_path = "");
+        TTF_Font *getFont(entt::hashed_string str_hs, int font_size);
+        void unloadFont(entt::id_type id, int font_size);
         void clearFonts();
     };
 }

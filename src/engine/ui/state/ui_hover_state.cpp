@@ -5,13 +5,16 @@
 #include "../../input/input_manager.h"
 #include "../../core/context.h"
 #include <spdlog/spdlog.h>
+#include <entt/core/hashed_string.hpp>
+
+using namespace entt::literals;
 
 namespace engine::ui::state
 {
 
     void UIHoverState::enter()
     {
-        owner_->setSprite("hover");
+        owner_->setSprite("hover"_hs);
     }
 
     std::unique_ptr<UIState> UIHoverState::handleInput(engine::core::Context &context)

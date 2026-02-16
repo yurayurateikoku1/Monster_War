@@ -2,9 +2,14 @@
 #include <spdlog/spdlog.h>
 #include "scene.h"
 #include "../core/context.h"
+#include "../utils/events.h"
+#include <entt/signal/dispatcher.hpp>
 engine::scene::SceneManager::SceneManager(engine::core::Context &context)
     : context_(context)
 {
+    context_.getDispatcher().sink<engine::utils::PopSceneEvent>().connect<&SceneManager::onPopScene>(this);
+    context_.getDispatcher().sink<engine::utils::PushSceneEvent>().connect<&SceneManager::onPushScene>(this);
+    context_.getDispatcher().sink<engine::utils::ReplaceSceneEvent>().connect<&SceneManager::onReplaceScene>(this);
     spdlog::info("SceneManager created");
 }
 
@@ -12,23 +17,6 @@ engine::scene::SceneManager::~SceneManager()
 {
     spdlog::info("SceneManager destroyed");
     close();
-}
-
-void engine::scene::SceneManager::requestPushScene(std::unique_ptr<Scene> &&scene)
-{
-    pending_action_ = PendingAction::Push;
-    pending_scene_ = std::move(scene);
-}
-
-void engine::scene::SceneManager::requestPopScene()
-{
-    pending_action_ = PendingAction::Pop;
-}
-
-void engine::scene::SceneManager::requestReplaceScene(std::unique_ptr<Scene> &&scene)
-{
-    pending_action_ = PendingAction::Replace;
-    pending_scene_ = std::move(scene);
 }
 
 engine::scene::Scene *engine::scene::SceneManager::getCurrentScene() const
@@ -82,6 +70,25 @@ void engine::scene::SceneManager::close()
         }
         scenes_stack_.pop_back();
     }
+
+    context_.getDispatcher().disconnect(this);
+}
+
+void engine::scene::SceneManager::onPopScene()
+{
+    pending_action_ = PendingAction::Pop;
+}
+
+void engine::scene::SceneManager::onPushScene(engine::utils::PushSceneEvent &event)
+{
+    pending_action_ = PendingAction::Push;
+    pending_scene_ = std::move(event.scene);
+}
+
+void engine::scene::SceneManager::onReplaceScene(engine::utils::ReplaceSceneEvent &event)
+{
+    pending_action_ = PendingAction::Replace;
+    pending_scene_ = std::move(event.scene);
 }
 
 void engine::scene::SceneManager::processPendingActions()
@@ -142,6 +149,11 @@ void engine::scene::SceneManager::popScene()
         scenes_stack_.back()->clean();
     }
     scenes_stack_.pop_back();
+
+    if (scenes_stack_.empty())
+    {
+        context_.getDispatcher().enqueue<engine::utils::QuitEvent>();
+    }
 }
 
 void engine::scene::SceneManager::replaceScene(std::unique_ptr<Scene> &&scene)

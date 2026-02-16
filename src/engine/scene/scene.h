@@ -36,7 +36,6 @@ namespace engine::scene
     protected:
         std::string scene_name_;
         engine::core::Context &context_;
-        engine::scene::SceneManager &scene_manager_;
         std::unique_ptr<engine::ui::UIManager> ui_manager_;
         bool is_initialized_{false};
         /// @brief 场景中的游戏对象
@@ -49,7 +48,7 @@ namespace engine::scene
         /// @param scene_name 场景名称
         /// @param context 上下文
         /// @param scene_manager 场景的管理器
-        Scene(const std::string &scene_name, engine::core::Context &context, engine::scene::SceneManager &scene_manager);
+        Scene(const std::string &scene_name, engine::core::Context &context);
         virtual ~Scene();
         Scene(const Scene &) = delete;
         Scene(Scene &&) = delete;
@@ -79,13 +78,23 @@ namespace engine::scene
 
         engine::object::GameObject *findGameObjectByName(const std::string &name) const;
 
+        /// @brief 请求弹出场景
+        void requestPopScene();
+        /// @brief 请求推入场景
+        /// @param scene
+        void requestPushScene(std::unique_ptr<engine::scene::Scene> &&scene);
+        /// @brief 请求替换场景
+        /// @param scene
+        void requestReplaceScene(std::unique_ptr<engine::scene::Scene> &&scene);
+        /// @brief 请求退出
+        void requestQuit();
+
         void setName(const std::string &name) { scene_name_ = name; }
         std::string getName() const { return scene_name_; }
         void setInitialized(bool initialized) { is_initialized_ = initialized; }
         bool getInitialized() const { return is_initialized_; }
 
         engine::core::Context &getContext() const { return context_; }
-        engine::scene::SceneManager &getSceneManager() const { return scene_manager_; }
 
     protected:
         /// @brief 待处理的添加，每轮更新的最后调用

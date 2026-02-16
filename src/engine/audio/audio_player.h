@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <entt/entity/fwd.hpp>
 struct MIX_Track;
 struct MIX_Audio;
 struct MIX_Mixer;
@@ -18,9 +19,6 @@ namespace engine::audio
         MIX_Track *musicTrack_ = nullptr;
         MIX_Track *soundTrack_ = nullptr;
 
-        MIX_Audio *musicAudio_ = nullptr;
-        MIX_Audio *soundAudio_ = nullptr;
-
         std::string current_music_;
 
     public:
@@ -32,9 +30,13 @@ namespace engine::audio
         AudioPlayer &operator=(const AudioPlayer &) = delete;
         AudioPlayer &operator=(AudioPlayer &&) = delete;
 
-        int playSound(const std::string &sound_path, int channel = -1);
+        int playSound(entt::id_type sound_id, int channel = -1);
 
-        int playMusic(const std::string &music_path, int loops = -1, int fade_in_ms = 0);
+        int playSound(entt::hashed_string hashed_path, int channel = -1);
+
+        int playMusic(entt::id_type music_id, int loops = -1, int fade_in_ms = 0);
+
+        int playMusic(entt::hashed_string hashed_path, int loops = -1, int fade_in_ms = 0);
 
         void stopMusic(int fade_out_ms = 0);
 

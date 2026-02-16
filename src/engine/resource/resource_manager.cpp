@@ -7,6 +7,7 @@
 #include "texture_manager.h"
 #include "audio_manager.h"
 #include "font_manager.h"
+#include <entt/core/hashed_string.hpp>
 engine::resource::ResourceManager::ResourceManager(SDL_Renderer *renderer)
 {
     texture_manager_ = std::make_unique<TextureManager>(renderer);
@@ -31,43 +32,67 @@ void engine::resource::ResourceManager::clear()
     font_manager_->clearFonts();
 }
 
-SDL_Texture *engine::resource::ResourceManager::loadTexture(const std::string &file_path)
+SDL_Texture *engine::resource::ResourceManager::loadTexture(entt::id_type id, const std::string &file_path)
 {
-    return texture_manager_->loadTexture(file_path);
+    return texture_manager_->loadTexture(id, file_path);
 }
 
-SDL_Texture *engine::resource::ResourceManager::getTexture(const std::string &file_path)
+SDL_Texture *engine::resource::ResourceManager::loadTexture(entt::hashed_string str_hs)
 {
-    return texture_manager_->getTexture(file_path);
+    return texture_manager_->loadTexture(str_hs);
 }
 
-void engine::resource::ResourceManager::unloadTexture(const std::string &file_path)
+SDL_Texture *engine::resource::ResourceManager::getTexture(entt::id_type id, const std::string &file_path)
 {
-    texture_manager_->unloadTexture(file_path);
+    return texture_manager_->getTexture(id, file_path);
 }
 
-glm::vec2 engine::resource::ResourceManager::getTextureSize(const std::string &file_path)
+SDL_Texture *engine::resource::ResourceManager::getTexture(entt::hashed_string str_hs)
 {
-    return texture_manager_->getTextureSize(file_path);
+    return texture_manager_->getTexture(str_hs);
+}
+void engine::resource::ResourceManager::unloadTexture(entt::id_type id)
+{
+    texture_manager_->unloadTexture(id);
+}
+
+glm::vec2 engine::resource::ResourceManager::getTextureSize(entt::hashed_string str_hs)
+{
+    return texture_manager_->getTextureSize(str_hs);
+}
+
+glm::vec2 engine::resource::ResourceManager::getTextureSize(entt::id_type id, const std::string &file_path)
+{
+    return texture_manager_->getTextureSize(id, file_path);
 }
 void engine::resource::ResourceManager::clearTextures()
 {
     texture_manager_->clearTextures();
 }
 
-MIX_Audio *engine::resource::ResourceManager::loadSound(const std::string &file_path)
+MIX_Audio *engine::resource::ResourceManager::loadSound(entt::id_type id, const std::string &file_path)
 {
-    return audio_manager_->loadSound(file_path);
+    return audio_manager_->loadSound(id, file_path);
 }
 
-MIX_Audio *engine::resource::ResourceManager::getSound(const std::string &file_path)
+MIX_Audio *engine::resource::ResourceManager::loadSound(entt::hashed_string str_hs)
 {
-    return audio_manager_->getSound(file_path);
+    return audio_manager_->loadSound(str_hs);
 }
 
-void engine::resource::ResourceManager::unloadSound(const std::string &file_path)
+MIX_Audio *engine::resource::ResourceManager::getSound(entt::hashed_string str_hs)
 {
-    audio_manager_->unloadSound(file_path);
+    return audio_manager_->getSound(str_hs);
+}
+
+MIX_Audio *engine::resource::ResourceManager::getSound(entt::id_type id, const std::string &file_path)
+{
+    return audio_manager_->getSound(id, file_path);
+}
+
+void engine::resource::ResourceManager::unloadSound(entt::id_type id)
+{
+    audio_manager_->unloadSound(id);
 }
 
 void engine::resource::ResourceManager::clearSounds()
@@ -75,19 +100,29 @@ void engine::resource::ResourceManager::clearSounds()
     audio_manager_->clearSounds();
 }
 
-MIX_Audio *engine::resource::ResourceManager::loadMusic(const std::string &file_path)
+MIX_Audio *engine::resource::ResourceManager::loadMusic(entt::hashed_string str_hs)
 {
-    return audio_manager_->loadMusic(file_path);
+    return audio_manager_->loadMusic(str_hs);
 }
 
-MIX_Audio *engine::resource::ResourceManager::getMusic(const std::string &file_path)
+MIX_Audio *engine::resource::ResourceManager::getMusic(entt::hashed_string str_hs)
 {
-    return audio_manager_->getMusic(file_path);
+    return audio_manager_->getMusic(str_hs);
 }
 
-void engine::resource::ResourceManager::unloadMusic(const std::string &file_path)
+MIX_Audio *engine::resource::ResourceManager::loadMusic(entt::id_type id, const std::string &file_path)
 {
-    audio_manager_->unloadMusic(file_path);
+    return audio_manager_->loadMusic(id, file_path);
+}
+
+MIX_Audio *engine::resource::ResourceManager::getMusic(entt::id_type id, const std::string &file_path)
+{
+    return audio_manager_->getMusic(id, file_path);
+}
+
+void engine::resource::ResourceManager::unloadMusic(entt::id_type id)
+{
+    audio_manager_->unloadMusic(id);
 }
 
 void engine::resource::ResourceManager::clearMusics()
@@ -95,19 +130,29 @@ void engine::resource::ResourceManager::clearMusics()
     audio_manager_->clearMusics();
 }
 
-TTF_Font *engine::resource::ResourceManager::loadFont(const std::string &file_path, int font_size)
+TTF_Font *engine::resource::ResourceManager::loadFont(entt::hashed_string str_hs, int font_size)
 {
-    return font_manager_->loadFont(file_path, font_size);
+    return font_manager_->loadFont(str_hs, font_size);
 }
 
-TTF_Font *engine::resource::ResourceManager::getFont(const std::string &file_path, int font_size)
+TTF_Font *engine::resource::ResourceManager::getFont(entt::hashed_string str_hs, int font_size)
 {
-    return font_manager_->getFont(file_path, font_size);
+    return font_manager_->getFont(str_hs, font_size);
 }
 
-void engine::resource::ResourceManager::unloadFont(const std::string &file_path, int font_size)
+TTF_Font *engine::resource::ResourceManager::loadFont(entt::id_type id, const std::string &file_path, int font_size)
 {
-    font_manager_->unloadFont(file_path, font_size);
+    return font_manager_->loadFont(id, font_size, file_path);
+}
+
+TTF_Font *engine::resource::ResourceManager::getFont(entt::id_type id, int font_size, const std::string &file_path)
+{
+    return font_manager_->getFont(id, font_size, file_path);
+}
+
+void engine::resource::ResourceManager::unloadFont(entt::id_type id, int font_size)
+{
+    font_manager_->unloadFont(id, font_size);
 }
 
 void engine::resource::ResourceManager::clearFonts()
