@@ -13,7 +13,7 @@ namespace engine::system
         registry.sort<component::RenderComponent>([](const auto &lhs, const auto &rhs)
                                                   { return lhs < rhs; });
         auto view = registry.view<component::RenderComponent, component::TransformComponent, component::SpriteComponent>();
-        view.use<component::RenderComponent>();
+        // view.use<component::RenderComponent>();
         for (auto entity : view)
         {
             const auto &transform = view.get<component::TransformComponent>(entity);
