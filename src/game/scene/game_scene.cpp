@@ -38,6 +38,7 @@
 #include "../component/player_component.h"
 #include "../component/stats_component.h"
 #include "../defs/tags.h"
+#include "../spawner/enemy_spawner.h"
 
 // game - system
 #include "../system/followpath_system.h"
@@ -81,6 +82,11 @@ void game::scene::GameScene::init()
         spdlog::error("Failed to init session data");
         return;
     }
+    if (!initLevelConfig())
+    {
+        spdlog::error("Failed to init level config");
+        return;
+    }
     if (!initUIConfig())
     {
         spdlog::error("Failed to init UI config");
@@ -121,7 +127,11 @@ void game::scene::GameScene::init()
         spdlog::error("Failed to init systems");
         return;
     }
-    createTestEnemy();
+    if (!initEnemySpawner())
+    {
+        spdlog::error("Failed to init enemy spawner");
+        return;
+    }
     Scene::init();
 }
 
@@ -145,6 +155,7 @@ void game::scene::GameScene::update(float dt)
     animation_system_->update(dt);
     place_unit_system_->update(dt);
     ysort_system_->update(registry_);
+    enemy_spawner_->update(dt);
     units_portrait_ui_->update(dt);
     Scene::update(dt);
 }
@@ -187,6 +198,22 @@ bool game::scene::GameScene::initSessionData()
     return true;
 }
 
+bool game::scene::GameScene::initLevelConfig()
+{
+    if (!level_config_)
+    {
+        level_config_ = std::make_shared<game::data::LevelConfig>();
+        if (!level_config_->loadFromFile("assets/data/level_config.json"))
+        {
+            spdlog::error("Failed to load level config");
+            return false;
+        }
+    }
+    waves_ = level_config_->getWavesData(level_number_);
+    game_stats_.enemy_count_ = level_config_->getTotalEnemyCount(level_number_);
+    return true;
+}
+
 bool game::scene::GameScene::initUIConfig()
 {
     if (!ui_config_)
@@ -206,7 +233,9 @@ bool game::scene::GameScene::loadlevel()
     engine::loader::LevelLoader level_loader;
 
     level_loader.setEntityBuilder(std::make_unique<game::loader::EntityBuilderMW>(level_loader, context_, registry_, waypoint_nodes_, start_points_));
-    if (!level_loader.loadLevel("assets/maps/level1.tmj", this))
+    // 获取关卡地图路径
+    auto map_path = level_config_->getMapPath(level_number_);
+    if (!level_loader.loadLevel(map_path, this))
     {
         spdlog::error("Failed to load level");
         return false;
@@ -255,7 +284,12 @@ bool game::scene::GameScene::initRegistryContext()
     registry_.ctx().emplace<std::shared_ptr<game::factory::BlueprintManager>>(blueprint_manager_);
     registry_.ctx().emplace<std::shared_ptr<game::data::SessionData>>(session_data_);
     registry_.ctx().emplace<std::shared_ptr<game::data::UIConfig>>(ui_config_);
+    registry_.ctx().emplace<std::shared_ptr<game::data::LevelConfig>>(level_config_);
+    registry_.ctx().emplace<std::unordered_map<int, game::data::WaypointNode> &>(waypoint_nodes_);
+    registry_.ctx().emplace<std::vector<int> &>(start_points_);
     registry_.ctx().emplace<game::data::GameStats &>(game_stats_);
+    registry_.ctx().emplace<game::data::Waves &>(waves_);
+    registry_.ctx().emplace<int &>(level_number_);
     spdlog::info("registry_ context initialized");
     return true;
 }
@@ -304,17 +338,11 @@ bool game::scene::GameScene::initSystems()
     return true;
 }
 
-void game::scene::GameScene::createTestEnemy()
+bool game::scene::GameScene::initEnemySpawner()
 {
-    // 每个起点创建一个敌人
-    for (auto start_index : start_points_)
-    {
-        auto position = waypoint_nodes_[start_index].position_;
-        entity_factory_->createEnemyUnit("wolf"_hs, position, start_index);
-        entity_factory_->createEnemyUnit("slime"_hs, position, start_index);
-        entity_factory_->createEnemyUnit("goblin"_hs, position, start_index);
-        entity_factory_->createEnemyUnit("dark_witch"_hs, position, start_index);
-    }
+    enemy_spawner_ = std::make_unique<game::spawner::EnemySpawner>(registry_, *entity_factory_);
+    spdlog::info("Enemy spawner initialized");
+    return true;
 }
 
 bool game::scene::GameScene::onClearAllPlayers()
