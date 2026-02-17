@@ -74,4 +74,16 @@ namespace engine::utils
         std::uniform_int_distribution<int> distribution(min, max);
         return distribution(generator);
     }
+
+    /**
+     * @brief 根据等级和稀有度修改属性
+     * @param base 基础属性
+     * @param level 等级
+     * @param rarity 稀有度
+     * @return 修改后的属性
+     */
+    inline float statModify(float base, int level = 1, int rarity = 1)
+    {
+        return base * (0.95f + 0.05f * level) * (0.9f + 0.1f * rarity);
+    }
 }

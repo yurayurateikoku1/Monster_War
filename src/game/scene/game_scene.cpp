@@ -30,6 +30,9 @@
 #include "../../engine/component/velocity_component.h"
 #include "../../engine/component/sprite_component.h"
 #include "../../engine/component/render_component.h"
+
+#include "../factory/entity_factory.h"
+#include "../factory/blueprint_manager.h"
 using namespace entt::literals;
 
 game::scene::GameScene::GameScene(engine::core::Context &context)
@@ -58,6 +61,12 @@ void game::scene::GameScene::init()
     if (!initEventConnections())
     {
         spdlog::error("Failed to init event connections");
+        return;
+    }
+
+    if (!initEntityFactory())
+    {
+        spdlog::error("Failed to init entity factory");
         return;
     }
     createTestEnemy();
@@ -115,6 +124,23 @@ bool game::scene::GameScene::initEventConnections()
     return true;
 }
 
+bool game::scene::GameScene::initEntityFactory()
+{
+    // 如果蓝图管理器为空，则创建一个（将来可能由构造函数传入）
+    if (!blueprint_manager_)
+    {
+        blueprint_manager_ = std::make_shared<game::factory::BlueprintManager>(context_.getResourceManager());
+        if (!blueprint_manager_->loadEnemyClassBlueprints("assets/data/enemy_data.json"))
+        {
+            spdlog::error("Failed to load enemy class blueprints");
+            return false;
+        }
+    }
+    entity_factory_ = std::make_unique<game::factory::EntityFactory>(registry_, *blueprint_manager_);
+    spdlog::info("entity_factory_ created");
+    return true;
+}
+
 void game::scene::GameScene::onEnemyArriveHome(const game::defs::EnemyArriveHomeEvent &event)
 {
     spdlog::info("Enemy arrive home");
@@ -126,16 +152,9 @@ void game::scene::GameScene::createTestEnemy()
     for (auto start_index : start_points_)
     {
         auto position = waypoint_nodes_[start_index].position_;
-
-        auto enemy = registry_.create();
-        registry_.emplace<engine::component::TransformComponent>(enemy, position);
-        registry_.emplace<engine::component::VelocityComponent>(enemy, glm::vec2(0, 0));
-        registry_.emplace<game::component::EnemyComponent>(enemy, start_index, 100.0f);
-
-        auto sprite = engine::component::Sprite("assets/textures/Enemy/wolf.png", engine::utils::Rect{0, 0, 192, 192});
-        // 设置精灵组件时，需设置偏移量以调整中心点位置(否则会默认以左上角为中心点)
-        registry_.emplace<engine::component::SpriteComponent>(enemy, std::move(sprite), glm::vec2(192, 192), glm::vec2(-96, -128));
-        // 暂定主战斗图层编号为10
-        registry_.emplace<engine::component::RenderComponent>(enemy, 10);
+        entity_factory_->createEnemyUnit("wolf"_hs, position, start_index);
+        entity_factory_->createEnemyUnit("slime"_hs, position, start_index);
+        entity_factory_->createEnemyUnit("goblin"_hs, position, start_index);
+        entity_factory_->createEnemyUnit("dark_witch"_hs, position, start_index);
     }
 }
