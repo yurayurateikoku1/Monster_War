@@ -24,7 +24,7 @@ namespace engine::render
         SDL_Renderer *renderer_{nullptr};
         /// @brief 指向资源管理器的非拥有指针
         engine::resource::ResourceManager *resource_manager_{nullptr};
-
+        engine::utils::FColor background_color_{0.0f, 0.0f, 0.0f, 1.0f}; ///< @brief 清除屏幕的颜色（默认黑色），可调用setBgColorFloat设置
     public:
         Renderer(SDL_Renderer *sdl_renderer, engine::resource::ResourceManager *resource_manager);
         Renderer(const Renderer &) = delete;
@@ -57,7 +57,7 @@ namespace engine::render
 
         void setDrawColor(Uint8 r, Uint8 g, Uint8 b, Uint8 a = 255);
         void setDrawColorFloat(float r, float g, float b, float a = 1.0f);
-
+        void setBgColorFloat(float r, float g, float b, float a = 1.0f) { background_color_ = {r, g, b, a}; }
         SDL_Renderer *getSDLRenderer() const { return renderer_; }
 
     private:

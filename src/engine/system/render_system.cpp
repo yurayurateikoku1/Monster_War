@@ -3,13 +3,17 @@
 #include "../render/camera.h"
 #include "../component/transform_component.h"
 #include "../component/sprite_component.h"
+#include "../component/render_component.h"
 
 namespace engine::system
 {
 
     void RenderSystem::update(entt::registry &registry, render::Renderer &renderer, const render::Camera &camera)
     {
-        auto view = registry.view<component::TransformComponent, component::SpriteComponent>();
+        registry.sort<component::RenderComponent>([](const auto &lhs, const auto &rhs)
+                                                  { return lhs < rhs; });
+        auto view = registry.view<component::RenderComponent, component::TransformComponent, component::SpriteComponent>();
+        view.use<component::RenderComponent>();
         for (auto entity : view)
         {
             const auto &transform = view.get<component::TransformComponent>(entity);

@@ -132,6 +132,7 @@ void engine::render::Renderer::present()
 
 void engine::render::Renderer::clearScreen()
 {
+    setDrawColorFloat(background_color_.r, background_color_.g, background_color_.b, background_color_.a);
     if (!SDL_RenderClear(renderer_))
     {
         spdlog::error("Render clear failed:{}", SDL_GetError());

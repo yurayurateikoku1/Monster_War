@@ -11,6 +11,7 @@
 #include "../../engine/system/render_system.h"
 #include "../../engine/system/movement_system.h"
 #include "../../engine/system/animation_system.h"
+#include "../../engine/system/ysort_system.h"
 #include "../../engine/audio/audio_player.h"
 #include "../../engine/resource/resource_manager.h"
 #include "../../engine/render/text_renderer.h"
@@ -48,7 +49,7 @@ void game::scene::GameScene::update(float dt)
 {
     movement_system_->update(registry_, dt);
     animation_system_->update(registry_, dt);
-
+    ysort_system_->update(registry_);
     Scene::update(dt);
 }
 

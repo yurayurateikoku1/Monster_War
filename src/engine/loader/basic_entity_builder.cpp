@@ -5,6 +5,7 @@
 #include "../component/name_component.h"
 #include "../component/sprite_component.h"
 #include "../component/transform_component.h"
+#include "../component/render_component.h"
 #include "../resource/resource_manager.h"
 #include <entt/entt.hpp>
 #include <spdlog/spdlog.h>
@@ -72,6 +73,7 @@ engine::loader::BasicEntityBuilder *engine::loader::BasicEntityBuilder::build()
     buildBase();
     buildSprite();
     buildTransform();
+    buildRender();
     buildAnimation();
     buildAudio();
     return this;
@@ -151,6 +153,14 @@ void engine::loader::BasicEntityBuilder::buildTransform()
 
     // 添加 TransformComponent
     registry_.emplace<engine::component::TransformComponent>(entity_id_, position_, scale, rotation);
+}
+
+void engine::loader::BasicEntityBuilder::buildRender()
+{
+    spdlog::trace("create renderer component");
+    int layer = level_loader_.getCurrentLayer();
+    float depth = position_.y;
+    registry_.emplace<engine::component::RenderComponent>(entity_id_, layer, depth);
 }
 
 void engine::loader::BasicEntityBuilder::buildAnimation()

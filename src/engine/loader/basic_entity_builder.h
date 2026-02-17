@@ -63,6 +63,7 @@ namespace engine::loader
         void buildBase();
         void buildSprite();
         void buildTransform();
+        void buildRender();
         void buildAnimation();
         void buildAudio();
 
