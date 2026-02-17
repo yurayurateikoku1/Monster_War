@@ -7,7 +7,6 @@
 
 // engine - core
 #include "../../engine/core/context.h"
-#include "../../engine/input/input_manager.h"
 #include "../../engine/utils/events.h"
 #include "../../engine/audio/audio_player.h"
 #include "../../engine/resource/resource_manager.h"
@@ -16,7 +15,6 @@
 
 // engine - render & ui
 #include "../../engine/render/text_renderer.h"
-#include "../../engine/render/camera.h"
 #include "../../engine/ui/ui_manager.h"
 
 // engine - component
@@ -32,13 +30,12 @@
 #include "../../engine/system/animation_system.h"
 #include "../../engine/system/ysort_system.h"
 #include "../../engine/system/audio_system.h"
+#include "../../engine/audio/audio_player.h"
 
 // game - component & defs
 #include "../component/enemy_component.h"
-#include "../component/player_component.h"
-#include "../component/stats_component.h"
-#include "../defs/tags.h"
 #include "../spawner/enemy_spawner.h"
+#include "title_scene.h"
 
 // game - system
 #include "../system/followpath_system.h"
@@ -144,6 +141,7 @@ void game::scene::GameScene::init()
         return;
     }
     context_.getGameState().setState(engine::core::State::Playing);
+    // context_.getAudioPlayer().playMusic("battle_bgm"_hs);
     Scene::init();
 }
 
@@ -318,6 +316,7 @@ bool game::scene::GameScene::initRegistryContext()
     registry_.ctx().emplace<int &>(level_number_);
     registry_.ctx().emplace_as<entt::entity &>("selected_unit"_hs, selected_unit_);
     registry_.ctx().emplace_as<entt::entity &>("hovered_unit"_hs, hovered_unit_);
+    registry_.ctx().emplace_as<bool &>("show_save_panel"_hs, show_save_panel_);
     spdlog::info("registry_ context initialized");
     return true;
 }
@@ -349,12 +348,13 @@ void game::scene::GameScene::onRestart()
 
 void game::scene::GameScene::onBackToTitle()
 {
-    spdlog::info("Returning to title screen");
+    requestReplaceScene(std::make_unique<game::scene::TitleScene>(context_));
 }
 
 void game::scene::GameScene::onSave()
 {
     spdlog::info("Saving game");
+    show_save_panel_ = !show_save_panel_;
 }
 
 void game::scene::GameScene::onLevelClear()
