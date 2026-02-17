@@ -23,28 +23,33 @@
 
 #include "../loader/entity_builder_mw.h"
 #include "../component/enemy_component.h"
+#include "../component/player_component.h"
 #include "../loader/entity_builder_mw.h"
 #include "../system/followpath_system.h"
 #include "../system/remove_dead_system.h"
+#include "../system/block_system.h"
 #include "../../engine/component/transform_component.h"
 #include "../../engine/component/velocity_component.h"
 #include "../../engine/component/sprite_component.h"
 #include "../../engine/component/render_component.h"
-
+#include "../../engine/input/input_manager.h"
 #include "../factory/entity_factory.h"
 #include "../factory/blueprint_manager.h"
+
 using namespace entt::literals;
 
 game::scene::GameScene::GameScene(engine::core::Context &context)
     : Scene("GameScene", context)
 {
+    auto &dispatcher = context.getDispatcher();
     render_system_ = std::make_unique<engine::system::RenderSystem>();
     movement_system_ = std::make_unique<engine::system::MovementSystem>();
-    animation_system_ = std::make_unique<engine::system::AnimationSystem>();
+    animation_system_ = std::make_unique<engine::system::AnimationSystem>(registry_, dispatcher);
     ysort_system_ = std::make_unique<engine::system::YSortSystem>();
 
     follow_path_system_ = std::make_unique<game::system::FollowPathSystem>();
     remove_dead_system_ = std::make_unique<game::system::RemoveDeadSystem>();
+    block_system_ = std::make_unique<game::system::BlockSystem>();
 }
 
 game::scene::GameScene::~GameScene()
@@ -63,7 +68,11 @@ void game::scene::GameScene::init()
         spdlog::error("Failed to init event connections");
         return;
     }
-
+    if (!initInputConnections())
+    {
+        spdlog::error("初始化输入连接失败");
+        return;
+    }
     if (!initEntityFactory())
     {
         spdlog::error("Failed to init entity factory");
@@ -82,8 +91,9 @@ void game::scene::GameScene::update(float dt)
 
     // 注意系统更新的顺序
     follow_path_system_->update(registry_, dispatcher, waypoint_nodes_);
+    block_system_->update(registry_, dispatcher);
     movement_system_->update(registry_, dt);
-    animation_system_->update(registry_, dt);
+    animation_system_->update(dt);
     ysort_system_->update(registry_);
     Scene::update(dt);
 }
@@ -98,7 +108,11 @@ void game::scene::GameScene::render()
 void game::scene::GameScene::clean()
 {
     auto &dispatcher = context_.getDispatcher();
+    auto &input_manager = context_.getInputManager();
     dispatcher.disconnect(this);
+    input_manager.onAction("mouse_right"_hs).disconnect<&GameScene::onCreateTestPlayerMelee>(this);
+    input_manager.onAction("mouse_left"_hs).disconnect<&GameScene::onCreateTestPlayerRanged>(this);
+    input_manager.onAction("pause"_hs).disconnect<&GameScene::onClearAllPlayers>(this);
     Scene::clean();
 }
 
@@ -124,14 +138,25 @@ bool game::scene::GameScene::initEventConnections()
     return true;
 }
 
+bool game::scene::GameScene::initInputConnections()
+{
+    auto &input_manager = context_.getInputManager();
+    input_manager.onAction("mouse_right"_hs).connect<&GameScene::onCreateTestPlayerMelee>(this);
+    input_manager.onAction("mouse_left"_hs).connect<&GameScene::onCreateTestPlayerRanged>(this);
+    input_manager.onAction("pause"_hs).connect<&GameScene::onClearAllPlayers>(this);
+    return true;
+}
+
 bool game::scene::GameScene::initEntityFactory()
 {
     // 如果蓝图管理器为空，则创建一个（将来可能由构造函数传入）
     if (!blueprint_manager_)
     {
         blueprint_manager_ = std::make_shared<game::factory::BlueprintManager>(context_.getResourceManager());
-        if (!blueprint_manager_->loadEnemyClassBlueprints("assets/data/enemy_data.json"))
+        if (!blueprint_manager_->loadEnemyClassBlueprints("assets/data/enemy_data.json") ||
+            !blueprint_manager_->loadPlayerClassBlueprints("assets/data/player_data.json"))
         {
+
             spdlog::error("Failed to load enemy class blueprints");
             return false;
         }
@@ -157,4 +182,30 @@ void game::scene::GameScene::createTestEnemy()
         entity_factory_->createEnemyUnit("goblin"_hs, position, start_index);
         entity_factory_->createEnemyUnit("dark_witch"_hs, position, start_index);
     }
+}
+
+bool game::scene::GameScene::onCreateTestPlayerMelee()
+{
+    auto position = context_.getInputManager().getLogicalMousePosition();
+    entity_factory_->createPlayerUnit("warrior"_hs, position);
+    spdlog::info("create player at: {}, {}", position.x, position.y);
+    return true;
+}
+
+bool game::scene::GameScene::onCreateTestPlayerRanged()
+{
+    auto position = context_.getInputManager().getLogicalMousePosition();
+    entity_factory_->createPlayerUnit("archer"_hs, position);
+    spdlog::info("create player at: {}, {}", position.x, position.y);
+    return true;
+}
+
+bool game::scene::GameScene::onClearAllPlayers()
+{
+    auto view = registry_.view<game::component::PlayerComponent>();
+    for (auto entity : view)
+    {
+        registry_.destroy(entity);
+    }
+    return true;
 }

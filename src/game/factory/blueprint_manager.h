@@ -25,17 +25,17 @@ namespace game::factory
     private:
         engine::resource::ResourceManager &resource_manager_;
 
+        std::unordered_map<entt::id_type, data::PlayerClassBlueprint> player_class_blueprints_; ///< @brief 玩家职业蓝图
+
         std::unordered_map<entt::id_type, data::EnemyClassBlueprint> enemy_class_blueprints_; ///< @brief 敌人类型蓝图
-        // TODO: 未来添加其他蓝图容器
 
     public:
         BlueprintManager(engine::resource::ResourceManager &resource_manager);
+        [[nodiscard]] bool loadPlayerClassBlueprints(std::string_view player_json_path); ///< @brief 加载玩家职业蓝图, 返回是否成功
+        [[nodiscard]] bool loadEnemyClassBlueprints(std::string_view enemy_json_path);   ///< @brief 加载敌人类型蓝图, 返回是否成功
 
-        [[nodiscard]] bool loadEnemyClassBlueprints(std::string_view enemy_json_path); ///< @brief 加载敌人类型蓝图, 返回是否成功
-        // TODO: 未来添加其他蓝图加载函数
-
-        const data::EnemyClassBlueprint &getEnemyClassBlueprint(entt::id_type id) const; ///< @brief 获取指定ID的敌人类型蓝图
-        // TODO: 未来添加其他蓝图获取函数
+        const data::PlayerClassBlueprint &getPlayerClassBlueprint(entt::id_type id) const; ///< @brief 获取指定ID的玩家职业蓝图
+        const data::EnemyClassBlueprint &getEnemyClassBlueprint(entt::id_type id) const;   ///< @brief 获取指定ID的敌人类型蓝图
 
     private:
         // --- 分别针对各个子蓝图进行json解析，并创建(返回)对应的蓝图结构体 ---
@@ -43,6 +43,7 @@ namespace game::factory
         data::SpriteBlueprint parseSprite(const nlohmann::json &json);
         std::unordered_map<entt::id_type, data::AnimationBlueprint> parseAnimationsMap(const nlohmann::json &json);
         data::SoundBlueprint parseSound(const nlohmann::json &json);
+        data::PlayerBlueprint parsePlayer(const nlohmann::json &json);
         data::EnemyBlueprint parseEnemy(const nlohmann::json &json);
         data::DisplayInfoBlueprint parseDisplayInfo(const nlohmann::json &json);
     };

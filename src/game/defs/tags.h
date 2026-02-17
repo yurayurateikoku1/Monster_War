@@ -18,4 +18,7 @@ namespace game::defs
     struct RangedUnitTag
     {
     }; ///< @brief 远程单位标签
+    struct HealerTag
+    {
+    }; ///< @brief 治疗单位标签
 }

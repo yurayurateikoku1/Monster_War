@@ -5,6 +5,8 @@
 #include <glm/vec2.hpp>
 #include <entt/signal/dispatcher.hpp>
 #include "../utils/events.h"
+#include <entt/core/hashed_string.hpp>
+
 engine::input::InputManager::InputManager(SDL_Renderer *sdl_renderer, const engine::core::Config *config, entt::dispatcher *dispatcher)
     : sdl_renderer_(sdl_renderer), dispatcher_(dispatcher)
 {
@@ -19,9 +21,9 @@ engine::input::InputManager::InputManager(SDL_Renderer *sdl_renderer, const engi
     mouse_position_ = glm::vec2(x, y);
 }
 
-entt::sink<entt::sigh<bool()>> engine::input::InputManager::onAction(const std::string &action_name, ActionState state)
+entt::sink<entt::sigh<bool()>> engine::input::InputManager::onAction(entt::id_type action_name_id, ActionState state)
 {
-    return action2func_[std::string(action_name)].at(static_cast<size_t>(state));
+    return action2func_[action_name_id].at(static_cast<size_t>(state));
 }
 
 void engine::input::InputManager::update()
@@ -63,9 +65,9 @@ void engine::input::InputManager::quit()
     dispatcher_->trigger<engine::utils::QuitEvent>();
 }
 
-bool engine::input::InputManager::isActionDown(const std::string &action_name) const
+bool engine::input::InputManager::isActionDown(entt::id_type action_name_id) const
 {
-    if (auto it = action_states_.find(action_name); it != action_states_.end())
+    if (auto it = action_states_.find(action_name_id); it != action_states_.end())
     {
         return it->second == ActionState::HELD || it->second == ActionState::PRESSED;
     }
@@ -73,18 +75,18 @@ bool engine::input::InputManager::isActionDown(const std::string &action_name) c
     return false;
 }
 
-bool engine::input::InputManager::isActionPressed(const std::string &action_name) const
+bool engine::input::InputManager::isActionPressed(entt::id_type action_name_id) const
 {
-    if (auto it = action_states_.find(action_name); it != action_states_.end())
+    if (auto it = action_states_.find(action_name_id); it != action_states_.end())
     {
         return it->second == ActionState::PRESSED;
     }
     return false;
 }
 
-bool engine::input::InputManager::isActionReleased(const std::string &action_name) const
+bool engine::input::InputManager::isActionReleased(entt::id_type action_name_id) const
 {
-    if (auto it = action_states_.find(action_name); it != action_states_.end())
+    if (auto it = action_states_.find(action_name_id); it != action_states_.end())
     {
         return it->second == ActionState::RELEASED;
     }
@@ -109,8 +111,8 @@ void engine::input::InputManager::processEvent(const SDL_Event &event)
         auto it = input2action_.find(scancode);
         if (it != input2action_.end())
         {
-            const std::vector<std::string> &associated_actions = it->second;
-            for (const std::string &action_name : associated_actions)
+            const std::vector<entt::id_type> &associated_actions = it->second;
+            for (const auto &action_name : associated_actions)
             {
                 updateActionStates(action_name, is_down, is_repeat);
             }
@@ -125,8 +127,8 @@ void engine::input::InputManager::processEvent(const SDL_Event &event)
         auto it_mouse = input2action_.find(mouse_button);
         if (it_mouse != input2action_.end())
         {
-            const std::vector<std::string> &associated_actions = it_mouse->second;
-            for (const std::string &action_name : associated_actions)
+            const std::vector<entt::id_type> &associated_actions = it_mouse->second;
+            for (const auto &action_name : associated_actions)
             {
                 updateActionStates(action_name, is_down_mouse, false);
             }
@@ -176,7 +178,8 @@ void engine::input::InputManager::initMappings(const engine::core::Config *confi
     // 遍历action2keyname_map_
     for (const auto &[action_name, key_names] : action2keyname_map_)
     {
-        action_states_[action_name] = ActionState::INACTIVE;
+        auto action_name_id = entt::hashed_string(action_name.c_str());
+        action_states_[action_name_id] = ActionState::INACTIVE;
         for (const std::string &key_name : key_names)
         {
             /* code */
@@ -186,12 +189,12 @@ void engine::input::InputManager::initMappings(const engine::core::Config *confi
             if (scancode != SDL_SCANCODE_UNKNOWN)
             {
                 /* code */
-                input2action_[scancode].push_back(action_name);
+                input2action_[scancode].push_back(action_name_id);
                 spdlog::info("Mapped key '{}' (scancode: {}) to action '{}'", key_name, static_cast<int>(scancode), action_name);
             }
             else if (mouse_button != 0)
             {
-                input2action_[mouse_button].push_back(action_name);
+                input2action_[mouse_button].push_back(action_name_id);
                 spdlog::info("Mapped mouse button '{}' to action '{}'", key_name, action_name);
             }
             else
@@ -202,9 +205,9 @@ void engine::input::InputManager::initMappings(const engine::core::Config *confi
     }
 }
 
-void engine::input::InputManager::updateActionStates(const std::string &action_name, bool is_input_active, bool is_reapt_event)
+void engine::input::InputManager::updateActionStates(entt::id_type action_name_id, bool is_input_active, bool is_reapt_event)
 {
-    auto it = action_states_.find(action_name);
+    auto it = action_states_.find(action_name_id);
     if (it == action_states_.end())
     {
         return;

@@ -3,9 +3,10 @@
 #include "../component/enemy_component.h"
 #include "../../engine/component/velocity_component.h"
 #include "../../engine/component/transform_component.h"
+#include "../component/blocked_by_component.h"
+#include "../defs/events.h"
 #include "../defs/tags.h"
 #include "../../engine/utils/math.h"
-#include "../defs/events.h"
 #include <entt/signal/dispatcher.hpp>
 #include <entt/entity/registry.hpp>
 #include <glm/geometric.hpp>
@@ -16,7 +17,7 @@ void game::system::FollowPathSystem::update(entt::registry &registry, entt::disp
     // 筛选依据：速度组件、变换组件、敌人组件
     auto view = registry.view<engine::component::VelocityComponent,
                               engine::component::TransformComponent,
-                              game::component::EnemyComponent>();
+                              game::component::EnemyComponent>(entt::exclude<game::component::BlockedByComponent>);
     for (auto entity : view)
     {
         auto &velocity = view.get<engine::component::VelocityComponent>(entity);

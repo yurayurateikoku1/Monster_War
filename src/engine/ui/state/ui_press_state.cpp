@@ -22,7 +22,7 @@ namespace engine::ui::state
     {
         auto &input_manager = context.getInputManager();
         auto mouse_pos = input_manager.getLogicalMousePosition();
-        if (input_manager.isActionReleased("MouseLeftClick"))
+        if (input_manager.isActionReleased("mouse_left"_hs))
         {
             if (!owner_->isPointInside(mouse_pos))
             { // 松开鼠标时，如果不在UI元素内，则切换到正常状态

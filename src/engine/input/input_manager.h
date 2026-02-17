@@ -32,13 +32,13 @@ namespace engine::input
         SDL_Renderer *sdl_renderer_{nullptr};
         entt::dispatcher *dispatcher_;
         /// @brief 动作到函数的映射 每个动作包含三个状态 RELEASED, PRESSED, HELD，每个状态对应一个函数
-        std::unordered_map<std::string, std::array<entt::sigh<bool()>, 3>> action2func_;
+        std::unordered_map<entt::id_type, std::array<entt::sigh<bool()>, 3>> action2func_;
 
         /// @brief 存储每个动作的当前状态
-        std::unordered_map<std::string, ActionState> action_states_;
+        std::unordered_map<entt::id_type, ActionState> action_states_;
 
         /// @brief 按键到动作的映射
-        std::unordered_map<std::variant<SDL_Scancode, Uint32>, std::vector<std::string>> input2action_;
+        std::unordered_map<std::variant<SDL_Scancode, Uint32>, std::vector<entt::id_type>> input2action_;
 
         /// @brief 鼠标位置
         glm::vec2 mouse_position_{0.0f, 0.0f};
@@ -51,7 +51,7 @@ namespace engine::input
         /// @param action_name
         /// @param state
         /// @return 一个sink对象，用于注册回调
-        entt::sink<entt::sigh<bool()>> onAction(const std::string &action_name, ActionState state = ActionState::PRESSED);
+        entt::sink<entt::sigh<bool()>> onAction(entt::id_type action_name_id, ActionState state = ActionState::PRESSED);
 
         void update();
         void quit();
@@ -59,17 +59,17 @@ namespace engine::input
         /// @brief 动作当前是否触发,持续按压
         /// @param action_name
         /// @return
-        bool isActionDown(const std::string &action_name) const;
+        bool isActionDown(entt::id_type action_name_id) const;
 
         /// @brief 动作当前是否在本帧刚刚按下
         /// @param action_name
         /// @return
-        bool isActionPressed(const std::string &action_name) const;
+        bool isActionPressed(entt::id_type action_name_id) const;
 
         /// @brief 动作当前是否在本帧刚刚释放
         /// @param action_name
         /// @return
-        bool isActionReleased(const std::string &action_name) const;
+        bool isActionReleased(entt::id_type action_name_id) const;
 
         glm::vec2 getMousePosition() const { return mouse_position_; }
         glm::vec2 getLogicalMousePosition() const;
@@ -79,7 +79,7 @@ namespace engine::input
         /// @param event
         void processEvent(const SDL_Event &event);
         void initMappings(const engine::core::Config *config);
-        void updateActionStates(const std::string &action_name, bool is_input_active, bool is_reapt_event);
+        void updateActionStates(entt::id_type action_name_id, bool is_input_active, bool is_reapt_event);
         SDL_Scancode scancodeFromString(const std::string &key_name);
         Uint32 mouseButtonFromString(const std::string &button_name);
     };

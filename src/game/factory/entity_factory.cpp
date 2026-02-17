@@ -17,6 +17,8 @@
 #include <spdlog/spdlog.h>
 #include <glm/gtc/constants.hpp>
 #include <glm/trigonometric.hpp>
+#include "../component/player_component.h"
+#include "../component/blocker_component.h"
 
 using namespace entt::literals;
 
@@ -26,6 +28,36 @@ namespace game::factory
     EntityFactory::EntityFactory(entt::registry &registry,
                                  BlueprintManager &blueprint_manager)
         : registry_(registry), blueprint_manager_(blueprint_manager) {}
+
+    entt::entity EntityFactory::createPlayerUnit(entt::id_type class_id, const glm::vec2 &position, int level, int rarity)
+    {
+        auto entity = registry_.create();
+        const auto &blueprint = blueprint_manager_.getPlayerClassBlueprint(class_id);
+        // --- 添加组件 ---
+        // 添加Transform组件
+        addTransformComponent(entity, position);
+
+        // 添加Sprite组件
+        addSpriteComponent(entity, blueprint.sprite_);
+
+        // 添加Animation组件
+        addAnimationComponent(entity, blueprint.animations_, blueprint.sprite_, "idle"_hs);
+
+        // 添加Audio组件
+        addAudioComponent(entity, blueprint.sounds_);
+
+        // 添加Stats组件
+        addStatsComponent(entity, blueprint.stats_, level, rarity);
+
+        // 添加Player组件
+        addPlayerComponent(entity, blueprint.player_, rarity);
+
+        // 补充其他必要组件
+        registry_.emplace<game::component::ClassNameComponent>(entity, class_id, blueprint.display_info_.name_);
+        registry_.emplace<engine::component::RenderComponent>(entity);
+
+        return entity;
+    }
 
     entt::entity EntityFactory::createEnemyUnit(entt::id_type class_id, const glm::vec2 &position, int target_waypoint_id, int level, int rarity)
     {
@@ -125,6 +157,27 @@ namespace game::factory
                                                                       0.0f,
                                                                       level,
                                                                       rarity);
+    }
+
+    void EntityFactory::addPlayerComponent(entt::entity entity, const data::PlayerBlueprint &player, int rarity)
+    {
+        auto cost = static_cast<int>(std::round(player.cost_ * (0.9f + 0.1f * rarity)));
+        registry_.emplace<game::component::PlayerComponent>(entity, cost);
+        // 添加类型标签(近战、远程、治疗)
+        if (player.type_ == game::defs::PlayerType::MELEE)
+        {
+            registry_.emplace<game::defs::MeleeUnitTag>(entity); // 近战单位标签
+            // 近战类型添加阻挡者组件
+            registry_.emplace<game::component::BlockerComponent>(entity, player.block_);
+        }
+        else if (player.type_ == game::defs::PlayerType::RANGED)
+        {
+            registry_.emplace<game::defs::RangedUnitTag>(entity); // 远程单位标签
+            if (player.healer_)
+            {
+                registry_.emplace<game::defs::HealerTag>(entity); // 治疗单位标签
+            }
+        }
     }
 
     void EntityFactory::addEnemyComponent(entt::entity entity, const data::EnemyBlueprint &enemy, int target_waypoint_id)
