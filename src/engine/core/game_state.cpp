@@ -56,4 +56,24 @@ namespace engine::core
         spdlog::trace("Set logical size: {}x{}", logical_size.x, logical_size.y);
     }
 
+    bool GameState::disableLogicalPresentation()
+    {
+        int width, height;
+        SDL_GetRenderLogicalPresentation(renderer_, &width, &height, NULL);
+        return SDL_SetRenderLogicalPresentation(renderer_,
+                                                width,
+                                                height,
+                                                SDL_LOGICAL_PRESENTATION_DISABLED);
+    }
+
+    bool GameState::enableLogicalPresentation()
+    {
+        int width, height;
+        SDL_GetRenderLogicalPresentation(renderer_, &width, &height, NULL);
+        return SDL_SetRenderLogicalPresentation(renderer_,
+                                                width,
+                                                height,
+                                                SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    }
+
 } // namespace engine::core

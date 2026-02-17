@@ -6,6 +6,8 @@
 #include <entt/signal/dispatcher.hpp>
 #include "../utils/events.h"
 #include <entt/core/hashed_string.hpp>
+#include <imgui.h>
+#include <imgui_impl_sdl3.h>
 
 engine::input::InputManager::InputManager(SDL_Renderer *sdl_renderer, const engine::core::Config *config, entt::dispatcher *dispatcher)
     : sdl_renderer_(sdl_renderer), dispatcher_(dispatcher)
@@ -44,6 +46,7 @@ void engine::input::InputManager::update()
     SDL_Event event;
     while (SDL_PollEvent(&event))
     {
+        ImGui_ImplSDL3_ProcessEvent(&event);
         processEvent(event);
     }
     // 触发回调
@@ -100,6 +103,11 @@ glm::vec2 engine::input::InputManager::getLogicalMousePosition() const
 
 void engine::input::InputManager::processEvent(const SDL_Event &event)
 {
+    // 如果 ImGui 捕获了鼠标，则不处理该事件(避免穿透到游戏中)
+    if (ImGui::GetIO().WantCaptureMouse)
+    {
+        return;
+    }
     switch (event.type)
     {
     case SDL_EVENT_KEY_DOWN:

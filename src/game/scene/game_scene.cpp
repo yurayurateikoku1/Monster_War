@@ -58,6 +58,7 @@
 #include "../ui/units_portrait_ui.h"
 #include "../system/place_unit_system.h"
 #include "../system/render_range_system.h"
+#include "../system/debug_ui_system.h"
 
 // game - loader & factory
 #include "../loader/entity_builder_mw.h"
@@ -170,6 +171,7 @@ void game::scene::GameScene::render()
     health_bar_system_->update(registry_, renderer, camera);
     render_range_system_->update(registry_, renderer, camera);
     Scene::render();
+    debug_ui_system_->update();
 }
 
 void game::scene::GameScene::clean()
@@ -334,6 +336,7 @@ bool game::scene::GameScene::initSystems()
     game_rule_system_ = std::make_unique<game::system::GameRuleSystem>(registry_, dispatcher);
     place_unit_system_ = std::make_unique<game::system::PlaceUnitSystem>(registry_, *entity_factory_, context_);
     render_range_system_ = std::make_unique<game::system::RenderRangeSystem>();
+    debug_ui_system_ = std::make_unique<game::system::DebugUISystem>(registry_, context_);
     spdlog::info("Systems initialized");
     return true;
 }

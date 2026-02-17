@@ -89,6 +89,7 @@ namespace engine::core
         [[nodiscard]] bool initGameState();
         [[nodiscard]] bool initContext();
         [[nodiscard]] bool initSceneManager();
+        [[nodiscard]] bool initImGui();
 
         void onQuitEvent();
     };
