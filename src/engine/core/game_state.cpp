@@ -58,21 +58,20 @@ namespace engine::core
 
     bool GameState::disableLogicalPresentation()
     {
-        int width, height;
-        SDL_GetRenderLogicalPresentation(renderer_, &width, &height, NULL);
+        // 关闭前先保存当前逻辑尺寸，因为 DISABLED 模式下 SDL_GetRenderLogicalPresentation 会返回 0,0
+        SDL_GetRenderLogicalPresentation(renderer_, &saved_logical_w_, &saved_logical_h_, NULL);
         return SDL_SetRenderLogicalPresentation(renderer_,
-                                                width,
-                                                height,
+                                                saved_logical_w_,
+                                                saved_logical_h_,
                                                 SDL_LOGICAL_PRESENTATION_DISABLED);
     }
 
     bool GameState::enableLogicalPresentation()
     {
-        int width, height;
-        SDL_GetRenderLogicalPresentation(renderer_, &width, &height, NULL);
+        // 使用之前保存的逻辑尺寸恢复
         return SDL_SetRenderLogicalPresentation(renderer_,
-                                                width,
-                                                height,
+                                                saved_logical_w_,
+                                                saved_logical_h_,
                                                 SDL_LOGICAL_PRESENTATION_LETTERBOX);
     }
 

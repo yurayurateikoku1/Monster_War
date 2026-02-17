@@ -20,4 +20,5 @@ namespace game::system
     class PlaceUnitSystem;
     class RenderRangeSystem;
     class DebugUISystem;
+    class SelectionSystem;
 }

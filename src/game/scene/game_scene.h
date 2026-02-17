@@ -6,6 +6,7 @@
 #include "../data/ui_config.h"
 #include "../data/game_stats.h"
 #include "../data/level_config.h"
+#include <entt/entity/entity.hpp>
 #include "../system/fwd.h"
 #include <memory>
 #include <unordered_map>
@@ -58,6 +59,7 @@ namespace game::scene
         std::unique_ptr<game::system::PlaceUnitSystem> place_unit_system_;
         std::unique_ptr<game::system::RenderRangeSystem> render_range_system_;
         std::unique_ptr<game::system::DebugUISystem> debug_ui_system_;
+        std::unique_ptr<game::system::SelectionSystem> selection_system_;
 
         std::unique_ptr<game::spawner::EnemySpawner> enemy_spawner_;   // 敌人生成器，负责生成敌人
         std::unique_ptr<game::ui::UnitsPortraitUI> units_portrait_ui_; // 封装的单位肖像UI，负责管理单位肖像UI的创建、更新和排列
@@ -75,6 +77,8 @@ namespace game::scene
         std::shared_ptr<game::data::LevelConfig> level_config_;              // 关卡配置，负责管理关卡数据
         // --- 其他场景数据 ---
         int level_number_{1};
+        entt::entity selected_unit_{entt::null}; // 游戏中鼠标选中的单位
+        entt::entity hovered_unit_{entt::null};  // 游戏中鼠标悬浮的单位
 
     public:
         GameScene(engine::core::Context &context);

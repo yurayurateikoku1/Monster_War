@@ -32,6 +32,8 @@ namespace engine::core
         SDL_Window *window_ = nullptr;       ///< @brief SDL窗口，用于获取窗口大小
         SDL_Renderer *renderer_ = nullptr;   ///< @brief SDL渲染器，用于获取逻辑分辨率
         State current_state_ = State::Title; ///< @brief 当前游戏状态
+        int saved_logical_w_ = 0;            ///< @brief 关闭逻辑分辨率前保存的宽度
+        int saved_logical_h_ = 0;            ///< @brief 关闭逻辑分辨率前保存的高度
 
     public:
         /**

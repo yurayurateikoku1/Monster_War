@@ -59,6 +59,7 @@
 #include "../system/place_unit_system.h"
 #include "../system/render_range_system.h"
 #include "../system/debug_ui_system.h"
+#include "../system/selection_system.h"
 
 // game - loader & factory
 #include "../loader/entity_builder_mw.h"
@@ -156,6 +157,7 @@ void game::scene::GameScene::update(float dt)
     animation_system_->update(dt);
     place_unit_system_->update(dt);
     ysort_system_->update(registry_);
+    selection_system_->update();
     enemy_spawner_->update(dt);
     units_portrait_ui_->update(dt);
     Scene::update(dt);
@@ -292,6 +294,8 @@ bool game::scene::GameScene::initRegistryContext()
     registry_.ctx().emplace<game::data::GameStats &>(game_stats_);
     registry_.ctx().emplace<game::data::Waves &>(waves_);
     registry_.ctx().emplace<int &>(level_number_);
+    registry_.ctx().emplace_as<entt::entity &>("selected_unit"_hs, selected_unit_);
+    registry_.ctx().emplace_as<entt::entity &>("hovered_unit"_hs, hovered_unit_);
     spdlog::info("registry_ context initialized");
     return true;
 }
@@ -337,6 +341,7 @@ bool game::scene::GameScene::initSystems()
     place_unit_system_ = std::make_unique<game::system::PlaceUnitSystem>(registry_, *entity_factory_, context_);
     render_range_system_ = std::make_unique<game::system::RenderRangeSystem>();
     debug_ui_system_ = std::make_unique<game::system::DebugUISystem>(registry_, context_);
+    selection_system_ = std::make_unique<game::system::SelectionSystem>(registry_, context_);
     spdlog::info("Systems initialized");
     return true;
 }
