@@ -270,7 +270,8 @@ bool game::scene::GameScene::initEntityFactory()
         blueprint_manager_ = std::make_shared<game::factory::BlueprintManager>(context_.getResourceManager());
         if (!blueprint_manager_->loadEnemyClassBlueprints("assets/data/enemy_data.json") ||
             !blueprint_manager_->loadPlayerClassBlueprints("assets/data/player_data.json") ||
-            !blueprint_manager_->loadProjectileBlueprints("assets/data/projectile_data.json"))
+            !blueprint_manager_->loadProjectileBlueprints("assets/data/projectile_data.json") ||
+            !blueprint_manager_->loadEffectBlueprints("assets/data/effect_data.json"))
         {
 
             spdlog::error("Failed to load enemy class blueprints");

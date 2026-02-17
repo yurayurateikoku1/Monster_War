@@ -61,4 +61,12 @@ namespace game::defs
     {
         entt::entity entity_{entt::null}; ///< @brief 单位实体
     };
+
+    /// @brief (通用)特效事件
+    struct EffectEvent
+    {
+        entt::id_type name_id_{entt::null}; ///< @brief 特效ID
+        glm::vec2 position_{};              ///< @brief 位置
+        bool is_flipped_{false};            ///< @brief 是否翻转
+    };
 }

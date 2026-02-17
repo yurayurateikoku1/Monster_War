@@ -109,4 +109,13 @@ namespace game::data
         SoundBlueprint sounds_{};
     };
 
+    /// @brief 特效蓝图, 生成特效实体时使用
+    struct EffectBlueprint
+    {
+        entt::id_type id_{entt::null};
+        std::string name_;
+        SpriteBlueprint sprite_{};
+        AnimationBlueprint animation_{};
+    };
+
 }
