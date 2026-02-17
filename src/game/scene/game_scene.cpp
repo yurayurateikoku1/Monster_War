@@ -57,6 +57,8 @@
 #include "../system/projectile_system.h"
 #include "../system/effect_system.h"
 #include "../system/health_bar_system.h"
+#include "../system/game_rule_system.h"
+#include "../ui/units_portrait_ui.h"
 
 // game - loader & factory
 #include "../loader/entity_builder_mw.h"
@@ -106,6 +108,16 @@ void game::scene::GameScene::init()
         spdlog::error("Failed to init entity factory");
         return;
     }
+    if (!initRegistryContext())
+    {
+        spdlog::error("Failed to init registry context");
+        return;
+    }
+    if (!initUnitsPortraitUI())
+    {
+        spdlog::error("Failed to init units portrait UI");
+        return;
+    }
     if (!initSystems())
     {
         spdlog::error("Failed to init systems");
@@ -113,7 +125,6 @@ void game::scene::GameScene::init()
     }
     testSessionData();
     createTestEnemy();
-    createUnitsPortraitUI();
     Scene::init();
 }
 
@@ -125,6 +136,7 @@ void game::scene::GameScene::update(float dt)
     remove_dead_system_->update(registry_);
 
     timer_system_->update(registry_, dt);
+    game_rule_system_->update(dt);
     block_system_->update(registry_, dispatcher);
     set_target_system_->update(registry_);
 
@@ -135,6 +147,7 @@ void game::scene::GameScene::update(float dt)
     movement_system_->update(registry_, dt);
     animation_system_->update(dt);
     ysort_system_->update(registry_);
+    units_portrait_ui_->update(dt);
     Scene::update(dt);
 }
 
@@ -206,9 +219,8 @@ bool game::scene::GameScene::loadlevel()
 
 bool game::scene::GameScene::initEventConnections()
 {
-    auto &dispatcher = context_.getDispatcher();
-    // 断开所有事件连接
-    dispatcher.sink<game::defs::EnemyArriveHomeEvent>().connect<&GameScene::onEnemyArriveHome>(this);
+    // auto &dispatcher = context_.getDispatcher();
+
     return true;
 }
 
@@ -242,6 +254,31 @@ bool game::scene::GameScene::initEntityFactory()
     return true;
 }
 
+bool game::scene::GameScene::initRegistryContext()
+{
+    // 让注册表存储一些数据类型实例作为上下文，方便使用
+    registry_.ctx().emplace<std::shared_ptr<game::factory::BlueprintManager>>(blueprint_manager_);
+    registry_.ctx().emplace<std::shared_ptr<game::data::SessionData>>(session_data_);
+    registry_.ctx().emplace<std::shared_ptr<game::data::UIConfig>>(ui_config_);
+    registry_.ctx().emplace<game::data::GameStats &>(game_stats_);
+    spdlog::info("registry_ context initialized");
+    return true;
+}
+
+bool game::scene::GameScene::initUnitsPortraitUI()
+{
+    try
+    {
+        units_portrait_ui_ = std::make_unique<game::ui::UnitsPortraitUI>(registry_, *ui_manager_, context_);
+    }
+    catch (const std::exception &e)
+    {
+        spdlog::error("Failed to create units portrait UI: {}", e.what());
+        return false;
+    }
+    return true;
+}
+
 bool game::scene::GameScene::initSystems()
 {
     auto &dispatcher = context_.getDispatcher();
@@ -265,99 +302,9 @@ bool game::scene::GameScene::initSystems()
     projectile_system_ = std::make_unique<game::system::ProjectileSystem>(registry_, dispatcher, *entity_factory_);
     effect_system_ = std::make_unique<game::system::EffectSystem>(registry_, dispatcher, *entity_factory_);
     health_bar_system_ = std::make_unique<game::system::HealthBarSystem>();
+    game_rule_system_ = std::make_unique<game::system::GameRuleSystem>(registry_, dispatcher);
     spdlog::info("Systems initialized");
     return true;
-}
-
-void game::scene::GameScene::createUnitsPortraitUI()
-{
-    if (!ui_manager_->init(context_.getGameState().getLogicalSize()))
-        return;
-
-    auto padding = ui_config_->getUnitPanelPadding();
-    auto &unit_map = session_data_->getUnitMap();
-    auto unit_num = unit_map.size();
-
-    // --- 在屏幕下方创建一个panel UI 条，用于显示角色肖像 ---
-    // 获取窗口大小和角色肖像框大小
-    auto window_size = context_.getGameState().getLogicalSize();
-    auto frame_size = ui_config_->getUnitPanelFrameSize();
-    // 根据角色数量、角色肖像框大小、间隔计算panel的位置和大小
-    auto pos = glm::vec2(0.0f, window_size.y - frame_size.y - 2 * padding);
-    auto size = glm::vec2(unit_num * frame_size.x + (unit_num + 1) * padding, frame_size.y + 2 * padding);
-    auto anchor_panel = std::make_unique<engine::ui::UIPanel>(pos, size);
-    // 设置背景色
-    anchor_panel->setBackgroundColor(engine::utils::FColor(0.1f, 0.1f, 0.1f, 0.1f));
-    // 设置ID，以后即可根据ID找到该panel
-    anchor_panel->setId("unit_panel"_hs);
-
-    // 依次添加角色肖像，每个肖像显示由四部分依次叠加：portrait，frame，icon，cost，可以通过一个frame_panel定位（位于上层anchor_panel之中）
-    int index = 0;
-    for (auto &[name_id, unit_data] : unit_map)
-    {
-        auto portrait = ui_config_->getPortrait(name_id);
-        auto frame = ui_config_->getPortraitFrame(unit_data.rarity_);
-        auto icon = ui_config_->getIcon(unit_data.class_id_);
-        auto cost = blueprint_manager_->getPlayerClassBlueprint(unit_data.class_id_).player_.cost_;
-        cost = static_cast<int>(std::round(engine::utils::statModify(cost, 1, unit_data.rarity_))); // 只有稀有度对cost有影响
-
-        // 创建每个肖像的 frame_panel
-        auto frame_pos = glm::vec2(padding + index * (frame_size.x + padding), padding);
-        auto frame_panel = std::make_unique<engine::ui::UIPanel>(frame_pos, frame_size);
-        frame_panel->setId(name_id);
-
-        // 依次添加四个元素，为了能够交互，将frame设置为按钮，并绑定点击事件
-        frame_panel->addChild(std::make_unique<engine::ui::UIImage>(portrait, glm::vec2(0.0f, 0.0f), frame_size));
-        frame_panel->addChild(std::make_unique<engine::ui::UIButton>(context_,
-                                                                     frame,
-                                                                     frame,
-                                                                     frame,
-                                                                     glm::vec2(0.0f, 0.0f),
-                                                                     frame_size
-                                                                     // TODO: 添加点击事件回调函数
-                                                                     ));
-        frame_panel->addChild(std::make_unique<engine::ui::UIImage>(icon, glm::vec2(0.0f, 0.0f), frame_size / 2.0f));
-        frame_panel->addChild(std::make_unique<engine::ui::UILabel>(context_.getTextRenderer(),
-                                                                    std::to_string(cost),
-                                                                    ui_config_->getUnitPanelFontPath(),
-                                                                    ui_config_->getUnitPanelFontSize(),
-                                                                    engine::utils::FColor::yellow(),
-                                                                    ui_config_->getUnitPanelFontOffset()));
-        // 最后添加一个灰色的遮盖panel，cost不足以支持该角色出击时显示
-        auto cover_panel = std::make_unique<engine::ui::UIPanel>(glm::vec2(0.0f, 0.0f), frame_size);
-        cover_panel->setBackgroundColor(engine::utils::FColor(0.0f, 0.0f, 0.0f, 0.2f));
-        cover_panel->setId("cover_panel"_hs);
-        frame_panel->addChild(std::move(cover_panel));
-
-        // 将frame_panel添加到anchor_panel中，并使用cost作为排序键
-        anchor_panel->addChild(std::move(frame_panel), cost);
-        index++;
-    }
-
-    // 对anchor_panel中的子元素(frame_panel)进行排序
-    anchor_panel->sortChildrenByOrderIndex();
-    // 按顺序排列anchor_panel中的子元素(frame_panel)的位置
-    arrangeUnitsPortraitUI(anchor_panel.get(), frame_size, padding);
-
-    ui_manager_->addElement(std::move(anchor_panel));
-}
-
-void game::scene::GameScene::arrangeUnitsPortraitUI(engine::ui::UIElement *anchor_panel, const glm::vec2 &frame_size, float padding)
-{
-    // 遍历panel中的子元素(定位panel)，并依次设定位置
-    for (size_t i = 0; i < anchor_panel->getChildren().size(); i++)
-    {
-        auto &child = anchor_panel->getChildren()[i];
-        child->setPosition(glm::vec2(padding + i * (frame_size.x + padding), padding));
-    }
-    // 更新panel的size
-    anchor_panel->setSize(glm::vec2(padding + anchor_panel->getChildren().size() * (frame_size.x + padding),
-                                    frame_size.y + 2 * padding));
-}
-
-void game::scene::GameScene::onEnemyArriveHome(const game::defs::EnemyArriveHomeEvent &event)
-{
-    spdlog::info("Enemy arrive home");
 }
 
 void game::scene::GameScene::testSessionData()

@@ -4,6 +4,7 @@
 #include "../data/waypoint_node.h"
 #include "../data/session_data.h"
 #include "../data/ui_config.h"
+#include "../data/game_stats.h"
 #include "../defs/events.h"
 #include "../system/fwd.h"
 #include <memory>
@@ -15,6 +16,10 @@ namespace engine::ui
     class UIElement;
 }
 
+namespace game::ui
+{
+    class UnitsPortraitUI;
+}
 namespace game::factory
 {
     class EntityFactory;
@@ -46,8 +51,13 @@ namespace game::scene
         std::unique_ptr<game::system::EffectSystem> effect_system_;
         std::unique_ptr<game::system::HealthBarSystem> health_bar_system_;
 
+        std::unique_ptr<game::system::GameRuleSystem> game_rule_system_;
+
+        std::unique_ptr<game::ui::UnitsPortraitUI> units_portrait_ui_; // 封装的单位肖像UI，负责管理单位肖像UI的创建、更新和排列
+
         std::unordered_map<int, game::data::WaypointNode> waypoint_nodes_; // <id, 路径节点>
         std::vector<int> start_points_;                                    // 起始点
+        game::data::GameStats game_stats_;                                 // 游戏统计数据
 
         std::unique_ptr<game::factory::EntityFactory> entity_factory_;       // 实体工厂，负责创建和管理实体
                                                                              // 管理数据的实例很可能同时被多个场景使用，因此使用共享指针
@@ -73,15 +83,9 @@ namespace game::scene
         [[nodiscard]] bool initEventConnections();
         [[nodiscard]] bool initInputConnections();
         [[nodiscard]] bool initEntityFactory();
+        [[nodiscard]] bool initRegistryContext();
+        [[nodiscard]] bool initUnitsPortraitUI();
         [[nodiscard]] bool initSystems();
-
-        void createUnitsPortraitUI(); ///< @brief 创建画面下方的单位肖像UI
-
-        ///< @brief 排列画面下方的单位肖像UI (肖像增/减时调用)
-        void arrangeUnitsPortraitUI(engine::ui::UIElement *anchor_panel, const glm::vec2 &frame_size, float padding);
-
-        // 事件回调函数
-        void onEnemyArriveHome(const game::defs::EnemyArriveHomeEvent &event);
 
         // 测试函数
         void testSessionData();

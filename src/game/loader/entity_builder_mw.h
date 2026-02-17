@@ -19,5 +19,6 @@ namespace game::loader
 
     private:
         void buildPath();
+        void buildPlace(); ///< @brief 生成单位放置区域标签
     };
 }

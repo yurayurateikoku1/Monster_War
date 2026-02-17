@@ -44,4 +44,11 @@ namespace game::defs
     struct HasHealthBarTag
     {
     }; ///< @brief 血量条标签，用于标记实体有血量条
+
+    struct MeleePlaceTag
+    {
+    }; ///< @brief 近战区域标签
+    struct RangedPlaceTag
+    {
+    }; ///< @brief 远程区域标签
 }
