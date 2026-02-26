@@ -1,4 +1,4 @@
-\# MonsterWar
+# MonsterWar
 
-!\[](./p1.gif)
+![](./p1.gif)
 
